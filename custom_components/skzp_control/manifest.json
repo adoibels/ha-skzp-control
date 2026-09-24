@@ -1,0 +1,13 @@
+{
+  "domain": "skzp_control",
+  "name": "SKZP Control",
+  "codeowners": ["@adoibels"],
+  "config_flow": true,
+  "dependencies": ["http"],
+  "documentation": "https://github.com/adoibels/ha-skzp-control",
+  "integration_type": "device",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/adoibels/ha-skzp-control/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

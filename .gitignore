@@ -1,0 +1,23 @@
+# Python i testy
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.coverage*
+htmlcov/
+
+# Edytory i system
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Pliki lokalne
+.env
+.env.*
+!.env.example
+*.log
