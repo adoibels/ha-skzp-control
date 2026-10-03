@@ -46,6 +46,7 @@ from .device import (
 )
 
 from .localization import async_load_localizations, translate
+from .value_decoder import get_active_alarms
 from .client.client import SkzpClient
 from .client.exceptions import MissingCredentialsError, NotConnectedError
 
@@ -94,6 +95,7 @@ class SkzpCoordinator(SkzpClient):
         self.host = host
         self.port = port
         self.entry_id = entry_id
+        self._logged_alarms: set[str] = set()
         self.update_event = f"{DOMAIN}_{entry_id}_data_update"
         self.command_retry_count = _bounded_int(
             options,
@@ -216,8 +218,7 @@ class SkzpCoordinator(SkzpClient):
         _LOGGER.log(
             level,
             "[SKZP Control] %s:%s — " + message,
-            self.host,
-            self.port,
+            self.host, self.port,
             *args,
         )
         self._connection_issue_logged = True
@@ -228,8 +229,7 @@ class SkzpCoordinator(SkzpClient):
         """Zapisuje wspólny komunikat ponowienia dla encji sterujących."""
         _LOGGER.warning(
             "[SKZP Control] %s:%s — Change of %s to %s not confirmed. Retry %d/%d in %g s.",
-            self.host,
-            self.port,
+            self.host, self.port,
             parameter,
             value,
             retry_number,
@@ -268,8 +268,7 @@ class SkzpCoordinator(SkzpClient):
             except Exception as err:
                 _LOGGER.debug(
                     "[SKZP Control] %s:%s — Error stopping task: %s",
-                    self.host,
-                    self.port,
+                    self.host, self.port,
                     format_communication_error(err),
                 )
 
@@ -304,14 +303,12 @@ class SkzpCoordinator(SkzpClient):
             _LOGGER.info(
                 "[SKZP Control] %s:%s — Communication restored. The controller is sending data "
                 "again.",
-                self.host,
-                self.port,
+                self.host, self.port,
             )
         elif first_data:
             _LOGGER.info(
                 "[SKZP Control] %s:%s — Received the first controller data frame.",
-                self.host,
-                self.port,
+                self.host, self.port,
             )
         self._connection_issue_logged = False
 
@@ -414,8 +411,7 @@ class SkzpCoordinator(SkzpClient):
     async def _connect(self) -> None:
         _LOGGER.debug(
             "[SKZP Control] %s:%s — Connecting via TCP.",
-            self.host,
-            self.port,
+            self.host, self.port,
         )
         while True:
             try:
@@ -425,8 +421,7 @@ class SkzpCoordinator(SkzpClient):
                 _LOGGER.debug(
                     "[SKZP Control] %s:%s — TCP connection established. Waiting for controller "
                     "data.",
-                    self.host,
-                    self.port,
+                    self.host, self.port,
                 )
                 return
             except asyncio.CancelledError:
@@ -439,6 +434,28 @@ class SkzpCoordinator(SkzpClient):
                 )
                 await asyncio.sleep(self.reconnect_delay)
 
+    def _log_alarm_changes(self, fields: dict) -> None:
+        """Loguje pojawienie i ustąpienie alarmów bez powtarzania wpisów."""
+        raw = fields.get("Alarms")
+        if raw is None or not str(raw).strip():
+            return
+        alarms = set(get_active_alarms(raw))
+        if alarms == self._logged_alarms:
+            return
+        for key in sorted(alarms - self._logged_alarms):
+            _LOGGER.warning(
+                "[SKZP Control] %s:%s — Alarm active: %s.",
+                self.host, self.port,
+                self.translate(f"common.alarm_{key}", language="en"),
+            )
+        for key in sorted(self._logged_alarms - alarms):
+            _LOGGER.info(
+                "[SKZP Control] %s:%s — Alarm cleared: %s.",
+                self.host, self.port,
+                self.translate(f"common.alarm_{key}", language="en"),
+            )
+        self._logged_alarms = alarms
+
     async def _read_loop(self) -> None:
         await self._connect()
         while True:
@@ -448,15 +465,10 @@ class SkzpCoordinator(SkzpClient):
                 for message in messages:
                     parsed = message.fields
                     if message.is_data:
+                        self._log_alarm_changes(parsed)
                         self._mark_data_received()
                         if "DevType" in self.data:
                             self._data_ready_event.set()
-                    _LOGGER.debug(
-                        "[SKZP Control] %s:%s — Received data (%d fields).",
-                        self.host,
-                        self.port,
-                        len(parsed),
-                    )
                     self._notify_entities()
 
             except asyncio.TimeoutError:

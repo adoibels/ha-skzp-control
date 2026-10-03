@@ -1,11 +1,14 @@
 """Klient łączący obsługę TCP, ramek i protokołu SKZP."""
 import asyncio
+import logging
 from ..frame_parser import FrameParser
 from ..parameter_resolver import resolve_parameter_write_key
 from .transport import TcpTransport
 from .command_manager import CommandManager
 from .protocol import SkzpProtocol
 from .exceptions import NotConnectedError
+
+_LOGGER = logging.getLogger(__name__)
 
 class SkzpClient:
     def __init__(self, host, port, *, max_frame_bytes=65536, transport=None):
@@ -33,6 +36,11 @@ class SkzpClient:
             self.data.pop(key, None)
 
     async def disconnect(self):
+        if self._parser.buffered_bytes:
+            _LOGGER.debug(
+                "Incomplete JSON frame discarded on disconnect (%d bytes).",
+                self._parser.buffered_bytes,
+            )
         await self.transport.disconnect()
         self._parser = FrameParser(self._max_frame_bytes)
 

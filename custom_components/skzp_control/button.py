@@ -1,6 +1,7 @@
 """Przyciski wysyłające polecenia do sterownika."""
 
 from dataclasses import dataclass
+import logging
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
@@ -10,6 +11,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import DOMAIN
 from .device import build_device_info
+
+_LOGGER = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class CommandButtonDescription:
@@ -100,3 +103,9 @@ class SkzpCommandButton(ButtonEntity):
     async def async_press(self) -> None:
         """Wysyła przypisane polecenie do sterownika."""
         await self._client.send_command({"CommandToDo": self._command})
+        _LOGGER.debug(
+            "[SKZP Control] %s:%s — Command sent: %s (%s).",
+            self._client.host, self._client.port,
+            self._client.translate(f"entity.button.{self._attr_translation_key}.name", language="en"),
+            self._command,
+        )

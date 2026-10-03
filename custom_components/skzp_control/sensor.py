@@ -234,8 +234,7 @@ async def async_setup_entry(
 
     _LOGGER.debug(
         "[SKZP Control] %s:%s — Added %d sensors for model %s.",
-        client.host,
-        client.port,
+        client.host, client.port,
         len(entities),
         client.model,
     )

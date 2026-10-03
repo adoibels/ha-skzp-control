@@ -51,6 +51,21 @@ def make_client(w, ha=False):
     return c
 
 class ProtocolTests(unittest.TestCase):
+    def test_alarm_changes_logged_once_and_missing_data_ignored(self):
+        client = object.__new__(SkzpCoordinator)
+        client.host, client.port = 'host', 1
+        client._logged_alarms = set()
+        client.translate = lambda key, **kwargs: key
+        with self.assertLogs('skzp_control.coordinator', level='DEBUG') as logs:
+            client._log_alarm_changes({"Alarms": "A000"})
+            client._log_alarm_changes({"Alarms": "A000"})
+            client._log_alarm_changes({})
+            client._log_alarm_changes({"Alarms": ""})
+            client._log_alarm_changes({"Alarms": "0000"})
+        self.assertEqual(sum('Alarm active:' in line for line in logs.output), 1)
+        self.assertEqual(sum('Alarm cleared:' in line for line in logs.output), 1)
+        self.assertEqual(client._logged_alarms, set())
+
     def test_wire_compatibility(self):
         state = dict(DevId=0, DevPin='', Token='secret')
         expected = (json.dumps({**state, 'x': '42'})+'\n').encode()

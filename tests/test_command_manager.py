@@ -55,6 +55,24 @@ class CommandManagerTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(OSError): await self.execute()
         self.wait.assert_not_awaited(); self.retry.assert_not_called()
 
+    async def test_confirmation_during_retry_delay_skips_send(self):
+        retry_started = asyncio.Event()
+        confirmed = asyncio.Event()
+        task = asyncio.create_task(self.execute(
+            retry_delay=.02,
+            on_retry=lambda _: retry_started.set(),
+            is_confirmed=confirmed.is_set,
+        ))
+        await retry_started.wait()
+        confirmed.set()
+        self.assertTrue(await task)
+        self.send.assert_awaited_once()
+        self.wait.assert_awaited_once()
+
+    async def test_unconfirmed_state_still_retries(self):
+        self.assertFalse(await self.execute(is_confirmed=lambda: False))
+        self.assertEqual(self.send.await_count, 3)
+
     async def test_cancellation_during_confirmation_and_delay(self):
         for phase in ('confirmation', 'delay'):
             started = asyncio.Event()

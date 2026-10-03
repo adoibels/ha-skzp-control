@@ -25,15 +25,18 @@ class CommandManager:
         wait: Callable[[], Awaitable[bool]],
         is_current: Callable[[], bool], retry_count: int, retry_delay: float,
         on_retry: Callable[[int], None],
+        is_confirmed: Callable[[], bool] | None = None,
     ) -> bool:
         """Zwraca True po potwierdzeniu lub zastąpieniu komendy, False po wyczerpaniu prób.
 
         Błędy połączenia i anulowanie są przekazywane dalej bez ponowienia.
         Funkcja send buduje komendę przy każdej próbie, uwzględniając aktualne aliasy.
-        Przerwa przed ponowieniem trwa do końca, także gdy nadejdzie potwierdzenie.
+        Przed ponowieniem sprawdza potwierdzenie odebrane podczas przerwy.
         """
         for attempt in range(retry_count + 1):
             if not is_current():
+                return True
+            if attempt > 0 and is_confirmed is not None and is_confirmed():
                 return True
             await send()
             if await wait():

@@ -1,8 +1,11 @@
 """Odczyt ograniczonych rozmiarem ramek JSON ze strumienia TCP."""
 
 import json
+import logging
 from collections.abc import Iterator
 from typing import Any
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class FrameParser:
@@ -17,6 +20,11 @@ class FrameParser:
         self._in_string = False
         self._escaped = False
 
+    @property
+    def buffered_bytes(self) -> int:
+        """Zwraca rozmiar oczekującej, niepełnej ramki."""
+        return len(self._buffer)
+
     def feed(self, chunk: bytes) -> Iterator[dict[str, Any]]:
         """Zwraca pełne ramki; błędna lub zbyt duża ramka przerywa odbiór."""
         for byte in chunk:
@@ -29,6 +37,7 @@ class FrameParser:
                 continue
 
             if len(self._buffer) >= self._limit:
+                _LOGGER.debug("Frame rejected: JSON size limit exceeded (%d bytes).", self._limit)
                 raise ValueError("Received JSON frame exceeds the size limit")
             self._buffer.append(byte)
             if self._in_string:
@@ -48,6 +57,7 @@ class FrameParser:
                     try:
                         frame = json.loads(self._buffer.decode("utf-8"))
                     except (ValueError, RecursionError):
+                        _LOGGER.debug("Frame rejected: invalid JSON or UTF-8 (%d bytes).", len(self._buffer))
                         # Nie umieszczamy zawartości ramki w komunikacie błędu.
                         raise ValueError("Received invalid JSON frame") from None
                     self._buffer.clear()

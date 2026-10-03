@@ -747,8 +747,8 @@
       "dhw_mode": {
         "name": "DHW Mode",
         "state": {
-          "stop": "Stop",
-          "always_on": "Always on",
+          "off": "Off",
+          "automatic": "Automatic",
           "pump_always_on": "Pump always on",
           "timer": "Time program"
         }
@@ -756,8 +756,8 @@
       "dhwc_mode": {
         "name": "DHW Circ. Mode",
         "state": {
-          "stop": "Stop",
-          "always_on": "Always on",
+          "off": "Off",
+          "active": "Active",
           "timer": "Time program"
         }
       },
@@ -771,15 +771,15 @@
       "ch1_mode": {
         "name": "CH1 Mode",
         "state": {
-          "stop": "Stop",
-          "always_on": "Always on",
+          "off": "Off",
+          "active": "Active",
           "timer": "Time program"
         }
       },
       "ch1_room_mode": {
         "name": "CH1 Room reg. Mode",
         "state": {
-          "stop": "Stop",
+          "off": "Off",
           "economy": "Economy temp.",
           "comfort": "Comfort temp.",
           "timer": "Time program"
@@ -788,15 +788,15 @@
       "ch2_mode": {
         "name": "CH2 Mode",
         "state": {
-          "stop": "Stop",
-          "always_on": "Always on",
+          "off": "Off",
+          "active": "Active",
           "timer": "Time program"
         }
       },
       "ch2_room_mode": {
         "name": "CH2 Room reg. Mode",
         "state": {
-          "stop": "Stop",
+          "off": "Off",
           "economy": "Economy temp.",
           "comfort": "Comfort temp.",
           "timer": "Time program"
@@ -805,15 +805,15 @@
       "ch3_mode": {
         "name": "CH3 Mode",
         "state": {
-          "stop": "Stop",
-          "always_on": "Always on",
+          "off": "Off",
+          "active": "Active",
           "timer": "Time program"
         }
       },
       "ch3_room_mode": {
         "name": "CH3 Room reg. Mode",
         "state": {
-          "stop": "Stop",
+          "off": "Off",
           "economy": "Economy temp.",
           "comfort": "Comfort temp.",
           "timer": "Time program"

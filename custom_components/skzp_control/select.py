@@ -44,33 +44,33 @@ BURNER_MODES = {
 }
 
 DHW_MODES = {
-    "stop": "Stop",
-    "always_on": "Still_On",
+    "off": "Stop",
+    "automatic": "Still_On",
     "pump_always_on": "PumpStillOn",
     "timer": "Timer",
 }
 
 DHWC_MODES = CH_MODES_TEXT = {
-    "stop": "Stop",
-    "always_on": "Active",
+    "off": "Stop",
+    "active": "Active",
     "timer": "Timer",
 }
 
 CH_MODES_NUMERIC = {
-    "stop": "0",
-    "always_on": "1",
+    "off": "0",
+    "active": "1",
     "timer": "2",
 }
 
 ROOM_MODES_NUMERIC = {
-    "stop": "0",
+    "off": "0",
     "economy": "1",
     "comfort": "2",
     "timer": "3",
 }
 
 ROOM_MODES_TEXT = {
-    "stop": "Off",
+    "off": "Off",
     "economy": "Economy",
     "comfort": "Comfort",
     "timer": "Timer",
@@ -246,8 +246,7 @@ async def async_setup_entry(
 
     _LOGGER.debug(
         "[SKZP Control] %s:%s — Added %d select entities for model %s.",
-        client.host,
-        client.port,
+        client.host, client.port,
         len(entities),
         client.model,
     )
@@ -371,6 +370,7 @@ class SkzpModeSelect(PendingChangeMixin, SelectEntity):
                     command_key = resolve_parameter_write_key(self._client.data, self._data_key)
                     command = {command_key: val_to_send}
                     await self._client.send_command(command)
+                    _LOGGER.debug("[SKZP Control] %s:%s — Command sent: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.select.{self._attr_translation_key}.name', language='en'), self._client.translate(f'entity.select.{self._attr_translation_key}.state.{option}', language='en'))
                 except HomeAssistantError:
                     if generation == self._send_generation:
                         self._restore_controller_option(previous_option)
@@ -386,9 +386,12 @@ class SkzpModeSelect(PendingChangeMixin, SelectEntity):
                 retry_count=self._client.command_retry_count,
                 retry_delay=self._client.command_retry_delay,
                 on_retry=log_retry,
+                is_confirmed=lambda: confirmation_event.is_set()
+                and self._last_controller_option == option,
             ):
                 if generation == self._send_generation:
                     self._confirmation_event = None
+                    _LOGGER.debug("[SKZP Control] %s:%s — Change confirmed: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.select.{self._attr_translation_key}.name', language='en'), self._client.translate(f'entity.select.{self._attr_translation_key}.state.{option}', language='en'))
                 return
 
             if generation != self._send_generation:
@@ -430,6 +433,7 @@ class SkzpModeSelect(PendingChangeMixin, SelectEntity):
         """Przywraca ostatnią opcję potwierdzoną przez sterownik."""
         restored_option = self._last_controller_option or fallback_option
         self._attr_current_option = restored_option
+        _LOGGER.debug("[SKZP Control] %s:%s — State restored: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.select.{self._attr_translation_key}.name', language='en'), self._client.translate(f'entity.select.{self._attr_translation_key}.state.{restored_option}', language='en') if restored_option is not None else "unknown")
         self._confirmed_option = restored_option
         self._clear_pending_change()
         self.async_write_ha_state()

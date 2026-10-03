@@ -4,6 +4,22 @@ import support
 from skzp_control.frame_parser import FrameParser
 
 class ParserTests(unittest.TestCase):
+    def test_normal_fragmentation_is_not_logged(self):
+        parser = FrameParser(65536)
+        with self.assertNoLogs('skzp_control.frame_parser', level='DEBUG'):
+            list(parser.feed(b'{"Token":"secret'))
+            list(parser.feed(b' more'))
+        self.assertGreater(parser.buffered_bytes, 0)
+        self.assertEqual(list(parser.feed(b'"}')), [{"Token": "secret more"}])
+        with self.assertNoLogs('skzp_control.frame_parser', level='DEBUG'):
+            list(parser.feed(b'{'))
+
+    def test_rejected_frame_log_without_content(self):
+        with self.assertLogs('skzp_control.frame_parser', level='DEBUG') as logs:
+            with self.assertRaises(ValueError):
+                list(FrameParser(65536).feed(b'{"Token": SECRET}'))
+        self.assertNotIn('SECRET', '\n'.join(logs.output))
+
     def test_all_packet_boundaries(self):
         obj = {'FrameType': 'SkzpData', 'text': 'żółć } { " \\', 'nested': {'list': [1, {'x': 2}]}}
         raw = json.dumps(obj, ensure_ascii=False).encode()

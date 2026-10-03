@@ -747,8 +747,8 @@
       "dhw_mode": {
         "name": "CWU Tryb pracy",
         "state": {
-          "stop": "Stop",
-          "always_on": "Stale wł.",
+          "off": "Wyłączony",
+          "automatic": "Automatyczny",
           "pump_always_on": "Pompa stale wł.",
           "timer": "Program czasowy"
         }
@@ -756,8 +756,8 @@
       "dhwc_mode": {
         "name": "Cyrk. CWU Tryb pracy",
         "state": {
-          "stop": "Stop",
-          "always_on": "Stale wł.",
+          "off": "Wyłączony",
+          "active": "Aktywny",
           "timer": "Program czasowy"
         }
       },
@@ -771,15 +771,15 @@
       "ch1_mode": {
         "name": "CO1 Tryb pracy",
         "state": {
-          "stop": "Stop",
-          "always_on": "Stale wł.",
+          "off": "Wyłączony",
+          "active": "Aktywny",
           "timer": "Program czasowy"
         }
       },
       "ch1_room_mode": {
         "name": "CO1 Reg. pokojowy Tryb pracy",
         "state": {
-          "stop": "Stop",
+          "off": "Wyłączony",
           "economy": "Temp. Ekonomiczna",
           "comfort": "Temp. Komfortowa",
           "timer": "Program czasowy"
@@ -788,15 +788,15 @@
       "ch2_mode": {
         "name": "CO2 Tryb pracy",
         "state": {
-          "stop": "Stop",
-          "always_on": "Stale wł.",
+          "off": "Wyłączony",
+          "active": "Aktywny",
           "timer": "Program czasowy"
         }
       },
       "ch2_room_mode": {
         "name": "CO2 Reg. pokojowy Tryb pracy",
         "state": {
-          "stop": "Stop",
+          "off": "Wyłączony",
           "economy": "Temp. Ekonomiczna",
           "comfort": "Temp. Komfortowa",
           "timer": "Program czasowy"
@@ -805,15 +805,15 @@
       "ch3_mode": {
         "name": "CO3 Tryb pracy",
         "state": {
-          "stop": "Stop",
-          "always_on": "Stale wł.",
+          "off": "Wyłączony",
+          "active": "Aktywny",
           "timer": "Program czasowy"
         }
       },
       "ch3_room_mode": {
         "name": "CO3 Reg. pokojowy Tryb pracy",
         "state": {
-          "stop": "Stop",
+          "off": "Wyłączony",
           "economy": "Temp. Ekonomiczna",
           "comfort": "Temp. Komfortowa",
           "timer": "Program czasowy"

@@ -715,8 +715,7 @@ async def async_setup_entry(
     async_add_entities(entities)
     _LOGGER.debug(
         "[SKZP Control] %s:%s — Added %d number entities for model %s.",
-        client.host,
-        client.port,
+        client.host, client.port,
         len(entities),
         client.model,
     )
@@ -882,6 +881,7 @@ class SkzpNumber(PendingChangeMixin, RestoreNumber):
                 async def send_attempt() -> None:
                     command_key = resolve_parameter_write_key(self._client.data, self._key)
                     await self._client.send_command({command_key: send_val})
+                    _LOGGER.debug("[SKZP Control] %s:%s — Command sent: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.number.{self._attr_translation_key}.name', language='en'), self._format_value(value))
 
                 def log_retry(retry_number: int) -> None:
                     self._client.log_command_retry(self._client.translate(f'entity.number.{self._attr_translation_key}.name', language='en'), self._format_value(value), retry_number)
@@ -893,9 +893,13 @@ class SkzpNumber(PendingChangeMixin, RestoreNumber):
                     retry_count=self._client.command_retry_count,
                     retry_delay=self._client.command_retry_delay,
                     on_retry=log_retry,
+                    is_confirmed=lambda: confirmation_event.is_set()
+                    and self._last_controller_value is not None
+                    and self._round(self._last_controller_value) == self._round(value),
                 ):
                     if send_generation == self._send_generation:
                         self._confirmation_event = None
+                        _LOGGER.debug("[SKZP Control] %s:%s — Change confirmed: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.number.{self._attr_translation_key}.name', language='en'), self._format_value(value))
                     return
             except HomeAssistantError:
                 if send_generation == self._send_generation:
@@ -946,6 +950,7 @@ class SkzpNumber(PendingChangeMixin, RestoreNumber):
             else fallback_value
         )
         self._attr_native_value = restored_value
+        _LOGGER.debug("[SKZP Control] %s:%s — State restored: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.number.{self._attr_translation_key}.name', language='en'), self._format_value(restored_value) if restored_value is not None else "unknown")
         self._confirmed_value = restored_value
         self._clear_pending_change()
         self.async_write_ha_state()

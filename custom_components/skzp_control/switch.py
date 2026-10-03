@@ -135,8 +135,7 @@ async def async_setup_entry(
     async_add_entities(entities)
     _LOGGER.debug(
         "[SKZP Control] %s:%s — Added %d switches for model %s.",
-        client.host,
-        client.port,
+        client.host, client.port,
         len(entities),
         client.model,
     )
@@ -242,13 +241,14 @@ class SkzpSwitchBase(PendingChangeMixin, SwitchEntity):
             async def send_attempt() -> None:
                 try:
                     await self._client.send_command(command)
+                    _LOGGER.debug("[SKZP Control] %s:%s — Command sent: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.switch.{self._attr_translation_key}.name', language='en'), state_text.capitalize())
                 except HomeAssistantError:
                     if generation == self._send_generation:
                         self._restore_controller_state(previous_state)
                     raise
 
             def log_retry(retry_number: int) -> None:
-                self._client.log_command_retry(self._client.translate(f'entity.switch.{self._attr_translation_key}.name', language='en'), state_text, retry_number)
+                self._client.log_command_retry(self._client.translate(f'entity.switch.{self._attr_translation_key}.name', language='en'), state_text.capitalize(), retry_number)
 
             if await self._client.command_manager.execute(
                 send=send_attempt,
@@ -257,9 +257,12 @@ class SkzpSwitchBase(PendingChangeMixin, SwitchEntity):
                 retry_count=self._client.command_retry_count,
                 retry_delay=self._client.command_retry_delay,
                 on_retry=log_retry,
+                is_confirmed=lambda: confirmation_event.is_set()
+                and self._last_controller_state is new_state,
             ):
                 if generation == self._send_generation:
                     self._confirmation_event = None
+                    _LOGGER.debug("[SKZP Control] %s:%s — Change confirmed: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.switch.{self._attr_translation_key}.name', language='en'), state_text.capitalize())
                 return
 
             if generation != self._send_generation:
@@ -306,6 +309,7 @@ class SkzpSwitchBase(PendingChangeMixin, SwitchEntity):
             else fallback_state
         )
         self._attr_is_on = restored_state
+        _LOGGER.debug("[SKZP Control] %s:%s — State restored: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.switch.{self._attr_translation_key}.name', language='en'), ("On" if restored_state else "Off") if restored_state is not None else "unknown")
         self._confirmed_state = restored_state
         self._clear_pending_change()
         self.async_write_ha_state()
