@@ -69,10 +69,15 @@ def recommended_disabled_entities(
     if is_unavailable_oxygen(get_parameter_value(device_data, "AN01")):
         disable("AN01")
 
+    if _value_is(device_data, "C031", "0", "off") or _has_unavailable_temperature(
+        device_data, "CH1ReturnTempAct"
+    ):
+        disable("C030", "C031", "CH1ReturnTempCmd", "CH1ReturnProtAct")
+
     buffer_top_missing = _has_unavailable_temperature(device_data, "D201")
     buffer_bottom_missing = _has_unavailable_temperature(device_data, "D202")
     if buffer_top_missing and buffer_bottom_missing:
-        disable("DevStatus_outBuffer", "D203", "D204")
+        disable("DevStatus_outBuffer", "D200", "D203", "D204")
 
     if _has_unavailable_temperature(device_data, "WeaTempAct"):
         disable(

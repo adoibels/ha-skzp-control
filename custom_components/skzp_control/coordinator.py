@@ -6,6 +6,7 @@ import time
 
 from homeassistant.components import persistent_notification
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.exceptions import (
     HomeAssistantError,
 )
@@ -43,6 +44,7 @@ from .const import (
 )
 from .device import (
     detect_device_model,
+    detect_firmware_version,
 )
 
 from .localization import async_load_localizations, translate
@@ -95,6 +97,8 @@ class SkzpCoordinator(SkzpClient):
         self.host = host
         self.port = port
         self.entry_id = entry_id
+        self.platform_device_type: str | None = None
+        self._registered_firmware_version: str | None = None
         self._logged_alarms: set[str] = set()
         self.update_event = f"{DOMAIN}_{entry_id}_data_update"
         self.command_retry_count = _bounded_int(
@@ -456,6 +460,30 @@ class SkzpCoordinator(SkzpClient):
             )
         self._logged_alarms = alarms
 
+    @property
+    def requires_platform_reload(self) -> bool:
+        """Sprawdza, czy encje uruchomiono dla innej wersji sterownika."""
+        dev_type = self.data.get("DevType")
+        return (
+            self.platform_device_type is not None
+            and isinstance(dev_type, str)
+            and bool(dev_type.strip())
+            and dev_type != self.platform_device_type
+        )
+
+    def _update_device_firmware(self, fields: dict) -> None:
+        """Aktualizuje wersję urządzenia po odebraniu nowego DevType."""
+        version = detect_firmware_version(fields.get("DevType"))
+        if version is None or version == self._registered_firmware_version:
+            return
+        registry = dr.async_get(self.hass)
+        device = registry.async_get_device(identifiers={(DOMAIN, self.entry_id)})
+        if device is None:
+            return
+        if device.sw_version != version:
+            registry.async_update_device(device.id, sw_version=version)
+        self._registered_firmware_version = version
+
     async def _read_loop(self) -> None:
         await self._connect()
         while True:
@@ -465,6 +493,7 @@ class SkzpCoordinator(SkzpClient):
                 for message in messages:
                     parsed = message.fields
                     if message.is_data:
+                        self._update_device_firmware(parsed)
                         self._log_alarm_changes(parsed)
                         self._mark_data_received()
                         if "DevType" in self.data:

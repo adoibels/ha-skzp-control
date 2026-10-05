@@ -31,7 +31,7 @@ from .const import (
     CONF_COMMAND_RETRY_COUNT,
     CONF_COMMAND_RETRY_DELAY,
     CONF_DEVICE_MODEL,
-    CONF_DISABLED_ENTITIES,
+    CONF_KNOWN_ENTITIES,
     CONF_NO_DATA_TIMEOUT,
     CONF_NOTIFY_CONNECTION_LOST,
     CONF_NOTIFY_CONNECTION_RESTORED,
@@ -82,7 +82,10 @@ from .entity_layout import (
     PAGE_CH3,
     PAGE_DHW_BUFFER,
     EntityChoice,
+    disabled_entity_ids,
+    entity_selection_options,
     existing_buffer_sensor_keys,
+    initialize_entity_selection,
 )
 from .entity_recommendations import recommended_disabled_entities
 from .frame_parser import FrameParser
@@ -691,10 +694,9 @@ class SkzpConfigFlow(_EntitySelectionFlowMixin, config_entries.ConfigFlow, domai
         return self.async_create_entry(
             title=f"{model} ({host})",
             data=self._connection_data,
-            options={
-                **self._advanced_options,
-                CONF_DISABLED_ENTITIES: sorted(self._disabled_entities),
-            },
+            options=entity_selection_options(
+                self._advanced_options, self._choices, self._disabled_entities
+            ),
         )
 
     async def async_step_reconfigure(
@@ -820,8 +822,10 @@ class SkzpOptionsFlow(_EntitySelectionFlowMixin, config_entries.OptionsFlowWithR
             device_data,
             retained_buffer_sensors,
         )
-        self._disabled_entities = set(
-            self.config_entry.options.get(CONF_DISABLED_ENTITIES, [])
+        if self._choices:
+            initialize_entity_selection(self.hass, self.config_entry, self._choices)
+        self._disabled_entities = disabled_entity_ids(
+            self.config_entry.options, self._choices
         )
         self._advanced_options = _normalize_advanced_options(
             self.config_entry.options
@@ -858,9 +862,9 @@ class SkzpOptionsFlow(_EntitySelectionFlowMixin, config_entries.OptionsFlowWithR
         if device_data is None:
             # Nieudany odczyt nie zmienia bieżącego wyboru.
             return await self.async_step_init()
-        self._disabled_entities = recommended_disabled_entities(
-            self._choices,
-            device_data,
+        self._disabled_entities.difference_update(selectable_entity_ids(self._choices))
+        self._disabled_entities.update(
+            recommended_disabled_entities(self._choices, device_data)
         )
         return await self.async_step_init()
 
@@ -875,9 +879,18 @@ class SkzpOptionsFlow(_EntitySelectionFlowMixin, config_entries.OptionsFlowWithR
             self._choices,
             self._disabled_entities,
         )
-        return self.async_create_entry(
-            data={
-                **self._advanced_options,
-                CONF_DISABLED_ENTITIES: sorted(self._disabled_entities),
-            }
+        options = entity_selection_options(
+            {**self.config_entry.options, **self._advanced_options},
+            self._choices,
+            self._disabled_entities,
         )
+        if not self._choices and CONF_KNOWN_ENTITIES not in self.config_entry.options:
+            # Bez danych nie utrwalamy pustego katalogu starszego wpisu.
+            options.pop(CONF_KNOWN_ENTITIES)
+        client = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        if options == self.config_entry.options and getattr(
+            client, "requires_platform_reload", False
+        ):
+            # HA przeładowuje automatycznie tylko zmienione opcje.
+            self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
+        return self.async_create_entry(data=options)

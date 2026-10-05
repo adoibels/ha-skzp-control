@@ -46,6 +46,7 @@ class CircuitNumberTests(TestCase):
             "CH1MixTempBase": ("C027", "ch1_mixer_temp_setpoint"),
             "CH1MixTempMin": ("C028", "ch1_mixer_temp_min"),
             "CH1MixTempMax": ("C029", "ch1_mixer_temp_max"),
+            "CH1ReturnTempCmd": ("C030", "ch1_return_temp_min"),
             "CH1RoomTempCom": ("C013", "ch1_room_comfort_temp"),
             "CH1RoomTempEco": ("C014", "ch1_room_eco_temp"),
             "CH1RoomHist": ("C015", "ch1_room_hysteresis"),

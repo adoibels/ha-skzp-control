@@ -118,7 +118,7 @@ def build_entity_choices(
         ):
             add("select", description.data_key, description.unique_suffix)
 
-    for description in get_switch_descriptions(model):
+    for description in get_switch_descriptions(model, device_identity):
         if is_parameter_definition_supported(
             device_data,
             description.data_key,

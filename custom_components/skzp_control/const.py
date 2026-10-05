@@ -19,6 +19,7 @@ CONF_RECONNECT_DELAY = "reconnect_delay"
 CONF_NOTIFY_CONNECTION_LOST = "notify_connection_lost"
 CONF_NOTIFY_CONNECTION_RESTORED = "notify_connection_restored"
 CONF_DISABLED_ENTITIES = "disabled_entities"
+CONF_KNOWN_ENTITIES = "known_entities"
 CONF_DEVICE_MODEL = "device_model"
 
 DEFAULT_NUMBER_SEND_DELAY = 1.0

@@ -56,7 +56,7 @@ class BufferTests(unittest.IsolatedAsyncioTestCase):
             'binary_sensor':dict(get_output_descriptions=lambda _: {},is_output_supported=lambda *_:False),
             'number':dict(get_number_descriptions=lambda model,dev: {'D203':{'unique_suffix':'buffer_temp_setpoint'},'D204':{'unique_suffix':'buffer_hysteresis'}} if supports_buffer_setting_writes(dev) else {}),
             'select':dict(SELECT_KEYS={},get_select_descriptions=lambda _: []),
-            'switch':dict(SWITCH_KEYS={},get_switch_descriptions=lambda _: [])}
+            'switch':dict(SWITCH_KEYS={},get_switch_descriptions=lambda *_: [])}
         for name,values in attrs.items():
             mod=types.ModuleType('skzp_control.'+name);mod.__dict__.update(values);modules[mod.__name__]=mod
         self.modules=modules
@@ -66,7 +66,11 @@ class BufferTests(unittest.IsolatedAsyncioTestCase):
         data=dict(DevType=f'SKZP-05S_V{version}',D203=60,D204=5)
         client=SimpleNamespace(data=data,model='SKZP-05S',host='host',port=1)
         hass=SimpleNamespace(data={'skzp_control':{'entry':client}})
-        entry=SimpleNamespace(entry_id='entry',options={'disabled_entities':list(disabled)})
+        entry=SimpleNamespace(entry_id='entry',options={
+            'disabled_entities':list(disabled),
+            'known_entities':[f'{platform}:{key}' for platform,keys in (
+                ('sensor',expected_sensors),('number',expected_numbers)) for key in keys],
+        })
         kept=existing_buffer_sensor_keys(hass,'entry')
         entities=[]
         await self.env['async_setup_entry'](hass,entry,entities.extend)

@@ -151,7 +151,8 @@
               "mixer": "Mixer",
               "temperatures": "Temperatures",
               "room": "Room regulator",
-              "weather": "Weather regulator"
+              "weather": "Weather regulator",
+              "return": "Return protection"
             }
           }
         }
@@ -398,7 +399,8 @@
               "mixer": "Mixer",
               "temperatures": "Temperatures",
               "room": "Room regulator",
-              "weather": "Weather regulator"
+              "weather": "Weather regulator",
+              "return": "Return protection"
             }
           }
         }
@@ -604,6 +606,9 @@
       "ch1_mixer_temp_setpoint": {
         "name": "CH1 Mixer Set temp."
       },
+      "ch1_return_temp_min": {
+        "name": "CH1 Return Min. temp."
+      },
       "ch1_mixer_temp_min": {
         "name": "CH1 Mixer Min. temp."
       },
@@ -717,11 +722,17 @@
       }
     },
     "switch": {
+      "buffer": {
+        "name": "Buffer"
+      },
       "dhw_priority": {
         "name": "DHW Priority"
       },
       "dhwc_always_on": {
         "name": "DHW Circ. Always on"
+      },
+      "ch1_return_protection": {
+        "name": "CH1 Return Protection"
       },
       "ch1_mixer": {
         "name": "CH1 Mixer"
@@ -1089,8 +1100,11 @@
         "number_weather_correction": "Correction",
         "number_weather_stop_temp_ch1": "Circuit shutdown temp.",
         "number_weather_stop_temp_ch2": "Circuit shutdown temp.",
+        "switch_buffer": "On/off",
         "switch_dhw_priority": "Priority on/off",
         "switch_dhwc_always_on": "Always on",
+        "number_ch1_return_temp_min": "Min. temp.",
+        "switch_ch1_return_protection": "On/off",
         "switch_ch1_mixer": "On/off",
         "switch_ch2_mixer": "On/off",
         "switch_ch3_mixer": "On/off",

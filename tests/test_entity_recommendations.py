@@ -56,12 +56,39 @@ def choice(platform, key):
 
 
 class RecommendationTests(unittest.TestCase):
+    def test_return_protection_recommendations(self):
+        recommend = load_recommendations()
+        choices = [
+            choice("number", "C030"),
+            choice("switch", "C031"),
+            choice("number", "CH1ReturnTempCmd"),
+            choice("switch", "CH1ReturnProtAct"),
+        ]
+        expected = {item.selection_id for item in choices}
+        for data in (
+            {"C031": "0", "CH1ReturnTempAct": "3000"},
+            {"CH1ReturnProtAct": "Off", "CH1ReturnTempAct": "3000"},
+            {"CH1ReturnProtAct": "off"},
+            {"C031": "1", "CH1ReturnTempAct": "30000"},
+            {"CH1ReturnProtAct": "On", "CH1ReturnTempAct": 30000},
+        ):
+            with self.subTest(data=data):
+                self.assertEqual(recommend(choices, data), expected)
+        for data in (
+            {"C031": "1", "CH1ReturnTempAct": "3000"},
+            {"CH1ReturnProtAct": "On", "CH1ReturnTempAct": "3000"},
+            {},
+        ):
+            with self.subTest(data=data):
+                self.assertEqual(recommend(choices, data), set())
+
     def test_missing_temperatures_disable_related_entities(self):
         recommend = load_recommendations()
         choices = [
             choice("sensor", "BoilerTempAct"),
             choice("binary_sensor", "DevStatus_outBuffer"),
             choice("sensor", "D201"),
+            choice("switch", "D200"),
             choice("number", "D203"),
             choice("number", "DHWTempCmd"),
             choice("select", "DHWMode"),
@@ -76,6 +103,7 @@ class RecommendationTests(unittest.TestCase):
         self.assertIn("sensor:BoilerTempAct", disabled)
         self.assertIn("binary_sensor:DevStatus_outBuffer", disabled)
         self.assertIn("number:D203", disabled)
+        self.assertIn("switch:D200", disabled)
         self.assertIn("number:DHWTempCmd", disabled)
         self.assertNotIn("select:DHWMode", disabled)
 

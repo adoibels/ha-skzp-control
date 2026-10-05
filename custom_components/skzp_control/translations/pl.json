@@ -151,7 +151,8 @@
               "mixer": "Mieszacz",
               "temperatures": "Temperatury",
               "room": "Regulator pokojowy",
-              "weather": "Regulator pogodowy"
+              "weather": "Regulator pogodowy",
+              "return": "Ochrona powrotu"
             }
           }
         }
@@ -398,7 +399,8 @@
               "mixer": "Mieszacz",
               "temperatures": "Temperatury",
               "room": "Regulator pokojowy",
-              "weather": "Regulator pogodowy"
+              "weather": "Regulator pogodowy",
+              "return": "Ochrona powrotu"
             }
           }
         }
@@ -604,6 +606,9 @@
       "ch1_mixer_temp_setpoint": {
         "name": "CO1 Mieszacz Temp. zadana"
       },
+      "ch1_return_temp_min": {
+        "name": "CO1 Powrót Temp. min."
+      },
       "ch1_mixer_temp_min": {
         "name": "CO1 Mieszacz Temp. min."
       },
@@ -717,11 +722,17 @@
       }
     },
     "switch": {
+      "buffer": {
+        "name": "Bufor"
+      },
       "dhw_priority": {
         "name": "CWU Priorytet"
       },
       "dhwc_always_on": {
         "name": "Cyrk. CWU Zawsze wł."
+      },
+      "ch1_return_protection": {
+        "name": "CO1 Powrót Ochrona"
       },
       "ch1_mixer": {
         "name": "CO1 Mieszacz"
@@ -1089,8 +1100,11 @@
         "number_weather_correction": "Korekta",
         "number_weather_stop_temp_ch1": "Temp. wyłączenia obiegu",
         "number_weather_stop_temp_ch2": "Temp. wyłączenia obiegu",
+        "switch_buffer": "Włącz/wyłącz",
         "switch_dhw_priority": "Priorytet włącz/wyłącz",
         "switch_dhwc_always_on": "Zawsze wł.",
+        "number_ch1_return_temp_min": "Temp. min.",
+        "switch_ch1_return_protection": "Włącz/wyłącz",
         "switch_ch1_mixer": "Włącz/wyłącz",
         "switch_ch2_mixer": "Włącz/wyłącz",
         "switch_ch3_mixer": "Włącz/wyłącz",

@@ -2,7 +2,7 @@ import asyncio
 import json
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import support
 from skzp_control.client.client import SkzpClient
 from skzp_control.client.transport import TcpTransport
@@ -51,6 +51,45 @@ def make_client(w, ha=False):
     return c
 
 class ProtocolTests(unittest.TestCase):
+    def test_firmware_update_refreshes_registry_once_and_requires_reload(self):
+        client = SkzpCoordinator(SimpleNamespace(), 'host', 1, 'entry', {})
+        old = 'SKZP-05S_V5.65_2025-06-17'
+        new = 'SKZP-05S_V5.71_2026-10-04'
+        client.platform_device_type = old
+        client.data['DevType'] = old
+        self.assertFalse(client.requires_platform_reload)
+        registry = Mock()
+        registry.async_get_device.return_value = SimpleNamespace(
+            id='device', sw_version='5.65 (2025-06-17)'
+        )
+        with patch('skzp_control.coordinator.dr.async_get', return_value=registry,
+                   create=True):
+            client.data['DevType'] = new
+            client._update_device_firmware({'DevType': new})
+            client._update_device_firmware({'DevType': new})
+            client._update_device_firmware({})
+            client._update_device_firmware({'DevType': 'invalid'})
+        registry.async_update_device.assert_called_once_with(
+            'device', sw_version='5.71 (2026-10-04)'
+        )
+        self.assertTrue(client.requires_platform_reload)
+        client.platform_device_type = new
+        self.assertFalse(client.requires_platform_reload)
+
+    def test_firmware_update_waits_for_device_registration(self):
+        client = SkzpCoordinator(SimpleNamespace(), 'host', 1, 'entry', {})
+        fields = {'DevType': 'SKZP-05S_V5.71_2026-10-04'}
+        registry = Mock()
+        registry.async_get_device.side_effect = [None, SimpleNamespace(
+            id='device', sw_version='5.71 (2026-10-04)')]
+        with patch('skzp_control.coordinator.dr.async_get', return_value=registry,
+                   create=True):
+            client._update_device_firmware(fields)
+            self.assertIsNone(client._registered_firmware_version)
+            client._update_device_firmware(fields)
+        registry.async_update_device.assert_not_called()
+        self.assertEqual(client._registered_firmware_version, '5.71 (2026-10-04)')
+
     def test_alarm_changes_logged_once_and_missing_data_ignored(self):
         client = object.__new__(SkzpCoordinator)
         client.host, client.port = 'host', 1

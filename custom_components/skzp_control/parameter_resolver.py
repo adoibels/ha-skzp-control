@@ -30,6 +30,8 @@ PARAMETER_ALIAS_GROUPS = (
     ("C027", "CH1MixTempBase"),
     ("C028", "CH1MixTempMin"),
     ("C029", "CH1MixTempMax"),
+    ("C030", "CH1ReturnTempCmd"),
+    ("C031", "CH1ReturnProtAct"),
     ("C040", "WeaTempStopCH1"),
     ("C140", "WeaTempStopCH2"),
 )
@@ -96,6 +98,10 @@ def resolve_parameter_key(data: Mapping[str, Any], key: str) -> str:
 
 def resolve_parameter_write_key(data: Mapping[str, Any], key: str) -> str:
     """Wybiera nazwę parametru przyjmowaną przez sterownik przy zapisie."""
+    if key in parameter_candidates("C030"):
+        return "CH1ReturnTempCmd"
+    if key in parameter_candidates("C031"):
+        return "CH1ReturnProtAct"
     if key in parameter_candidates("C012"):
         value = data.get("C012")
         if (
@@ -104,6 +110,13 @@ def resolve_parameter_write_key(data: Mapping[str, Any], key: str) -> str:
         ):
             return "CH1Mode"
     return resolve_parameter_key(data, key)
+
+
+def resolve_parameter_write_value(key: str, value: str) -> str:
+    """Przelicza stan liczbowy ochrony powrotu na wartość komendy."""
+    if key == "CH1ReturnProtAct":
+        return {"1": "On", "0": "Off"}.get(value, value)
+    return value
 
 
 def get_parameter_value(data: Mapping[str, Any], key: str) -> Any:

@@ -73,6 +73,7 @@ def load_flow(path: Path = None):
         env.update({key: value for key, value in vars(module).items()
                     if not key.startswith("_")})
     env["existing_buffer_sensor_keys"] = lambda *_args: frozenset()
+    env["initialize_entity_selection"] = Mock()
     env.update(
         config_entries=SimpleNamespace(ConfigFlow=FlowBoundary,
                                        OptionsFlowWithReload=FlowBoundary,
@@ -274,6 +275,7 @@ class FlowTests(unittest.IsolatedAsyncioTestCase):
             result = await flow.async_step_finish()
             saved = result["data"] if options else result["options"]
             self.assertEqual(saved["disabled_entities"], ["sensor:a", "sensor:z"])
+            self.assertEqual(saved["known_entities"], ["sensor:K"])
         sync.assert_called_once()
 
     async def test_restore_uses_fresh_client_data_and_preserves_selection_on_errors(self):
@@ -289,8 +291,73 @@ class FlowTests(unittest.IsolatedAsyncioTestCase):
                       self.module.UnsupportedDeviceError("unknown", {})):
             read.side_effect = error
             await flow.async_step_restore_recommended()
-            self.assertEqual(flow._disabled_entities, {"sensor:K"})
+            self.assertEqual(flow._disabled_entities, {"sensor:K", "sensor:outside"})
         self.assertEqual(recommend.call_count, 1)
+
+    async def test_new_entity_is_unselected_until_saved_explicitly(self):
+        flow = self.create_flow(options=True, initialized=False)
+        self.entry.options = {"known_entities": ["sensor:outside"],
+                              "disabled_entities": ["sensor:outside"]}
+        flow._async_get_device_context = AsyncMock(return_value=("SKZP-05S", {}))
+        self.env["build_entity_choices"] = Mock(return_value=self.choices)
+        self.env["_sync_entity_registry_selection"] = Mock()
+        await flow.async_step_init()
+        self.assertEqual(flow._disabled_entities, {"sensor:outside", "sensor:K"})
+        shown = await flow.async_step_ch1()
+        groups = next(iter(shown["data_schema"].schema.values()))[0].schema
+        self.assertEqual(next(iter(groups)).options["default"], [])
+        saved = (await flow.async_step_finish())["data"]
+        self.assertEqual(saved["known_entities"], ["sensor:K", "sensor:outside"])
+        self.assertIn("sensor:K", saved["disabled_entities"])
+        await flow.async_step_ch1({"sensors": {"sample": ["sensor_k"]}})
+        saved = (await flow.async_step_finish())["data"]
+        self.assertEqual(saved["disabled_entities"], ["sensor:outside"])
+
+    async def test_offline_settings_do_not_reset_selection(self):
+        self.env["_sync_entity_registry_selection"] = Mock()
+        self.env["build_entity_choices"] = Mock(return_value=[])
+        for known in (None, ["sensor:K"]):
+            flow = self.create_flow(options=True, initialized=False)
+            self.entry.options = {"disabled_entities": ["sensor:outside"]}
+            if known is not None:
+                self.entry.options["known_entities"] = known
+            flow._async_get_device_context = AsyncMock(return_value=("SKZP-05S", None))
+            saved = (await flow.async_step_finish())["data"]
+            self.assertEqual(saved.get("known_entities"), known)
+            self.assertEqual(saved["disabled_entities"], ["sensor:outside"])
+
+    async def test_firmware_change_reloads_unchanged_options_only(self):
+        self.env["_sync_entity_registry_selection"] = Mock()
+        for firmware_changed, options_changed in ((False, False), (True, False), (True, True)):
+            flow = self.create_flow(options=True)
+            self.entry.options = entity_layout.entity_selection_options(
+                flow._advanced_options, self.choices, flow._disabled_entities
+            )
+            flow.hass.config_entries = Mock()
+            flow.hass.data = {"skzp_control": {"entry": SimpleNamespace(
+                requires_platform_reload=firmware_changed)}}
+            if options_changed:
+                flow._advanced_options["boiler_temp_max"] = 90
+            await flow.async_step_finish()
+            if firmware_changed and not options_changed:
+                flow.hass.config_entries.async_schedule_reload.assert_called_once_with("entry")
+            else:
+                flow.hass.config_entries.async_schedule_reload.assert_not_called()
+
+    async def test_firmware_upgrade_keeps_new_buffer_numbers_unselected(self):
+        flow = self.create_flow(options=True, initialized=False)
+        self.entry.options = {"known_entities": ["sensor:D203", "sensor:D204"],
+                              "disabled_entities": []}
+        self.env["build_entity_choices"] = Mock(return_value=[
+            entity_layout.EntityChoice("number", key, suffix, "dhw_buffer",
+                "configuration", "buffer", (0, index))
+            for index, (key, suffix) in enumerate((
+                ("D203", "buffer_temp_setpoint"), ("D204", "buffer_hysteresis")))
+        ])
+        flow.hass.data = {"skzp_control": {"entry": SimpleNamespace(
+            model="SKZP-05S", data={"DevType": "SKZP-05S_V5.71_2026-10-04"})}}
+        await flow.async_step_init()
+        self.assertEqual(flow._disabled_entities, {"number:D203", "number:D204"})
 
     async def test_restore_falls_back_to_tcp_for_empty_client(self):
         flow = self.create_flow(options=True)

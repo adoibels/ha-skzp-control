@@ -228,7 +228,19 @@ _CIRCUIT_NUMBER_TEMPLATES: tuple[dict[str, Any], ...] = (
             1,
         ),
     },
-
+    # Ochrona powrotu CO1
+    {
+        "keys": {
+            1: ("C030", "CH1ReturnTempCmd",),
+        },
+        "definition": _temperature_number(
+            "return_temp_min",
+            "mdi:thermometer",
+            30,
+            80,
+            1,
+        ),
+    },
     # Regulator pokojowy
     {
         "keys": {

@@ -1,12 +1,14 @@
 """Układ formularza i identyfikatory wyboru encji."""
 
 from dataclasses import dataclass
+from collections.abc import Mapping
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
-from .const import CONF_DISABLED_ENTITIES, DOMAIN
+from .const import CONF_DISABLED_ENTITIES, CONF_KNOWN_ENTITIES, DOMAIN
 
 PAGE_BOILER_BURNER = "boiler_burner"
 PAGE_DHW_BUFFER = "dhw_buffer"
@@ -41,6 +43,7 @@ FIELD_DHW = "dhw"
 FIELD_DHWC = "dhwc"
 FIELD_CIRCUIT = "circuit"
 FIELD_WORK_MODE = "work_mode"
+FIELD_RETURN = "return"
 FIELD_MIXER = "mixer"
 FIELD_TEMPERATURES = "temperatures"
 FIELD_ROOM = "room"
@@ -161,7 +164,7 @@ ENTITY_LAYOUT = (
         PAGE_DHW_BUFFER,
         SECTION_CONFIGURATION,
         FIELD_BUFFER,
-        ("D203", "D204"),
+        ("D200", "D203", "D204"),
     ),
     (
         PAGE_DHW_BUFFER,
@@ -242,6 +245,12 @@ ENTITY_LAYOUT = (
         SECTION_CONFIGURATION,
         FIELD_WEATHER,
         ("C018", "C040", "WeaCorr", "WeaTempStopCH1"),
+    ),
+    (
+        PAGE_CH1,
+        SECTION_CONFIGURATION,
+        FIELD_RETURN,
+        ("C031", "C030", "CH1ReturnProtAct", "CH1ReturnTempCmd"),
     ),
     # Obieg CO2 — sensory i stany
     (PAGE_CH2, SECTION_SENSORS, FIELD_CIRCUIT, ("DevStatus_outCH2", "C106", "C107")),
@@ -351,7 +360,55 @@ def is_entity_enabled(config_entry: ConfigEntry, platform: str, key: str) -> boo
     """Sprawdza, czy encja jest włączona w opcjach integracji."""
     selection_id = make_selection_id(platform, key)
     disabled = config_entry.options.get(CONF_DISABLED_ENTITIES, [])
-    return selection_id not in disabled
+    known = config_entry.options.get(CONF_KNOWN_ENTITIES, [])
+    return selection_id in known and selection_id not in disabled
+
+
+def disabled_entity_ids(
+    options: Mapping[str, Any], choices: list[EntityChoice]
+) -> set[str]:
+    """Zachowuje odznaczone encje i odznacza pozycje jeszcze nieznane."""
+    known = set(options.get(CONF_KNOWN_ENTITIES, []))
+    available = {choice.selection_id for choice in choices}
+    return set(options.get(CONF_DISABLED_ENTITIES, [])) | (available - known)
+
+
+def entity_selection_options(
+    options: Mapping[str, Any],
+    choices: list[EntityChoice],
+    disabled: set[str],
+) -> dict[str, Any]:
+    """Zapisuje wybór, zachowując także chwilowo niedostępne pozycje."""
+    known = set(options.get(CONF_KNOWN_ENTITIES, []))
+    known.update(choice.selection_id for choice in choices)
+    return {
+        **options,
+        CONF_KNOWN_ENTITIES: sorted(known),
+        CONF_DISABLED_ENTITIES: sorted(disabled),
+    }
+
+
+def initialize_entity_selection(
+    hass: HomeAssistant, config_entry: ConfigEntry, choices: list[EntityChoice]
+) -> None:
+    """Odtwarza pierwszy zapis wyboru na podstawie rejestru encji HA."""
+    if CONF_KNOWN_ENTITIES in config_entry.options:
+        return
+    known: set[str] = set()
+    registry = er.async_get(hass)
+    for choice in choices:
+        if registry.async_get_entity_id(
+            choice.platform, DOMAIN,
+            f"{config_entry.entry_id}_{choice.unique_suffix}",
+        ) is not None:
+            known.add(choice.selection_id)
+    disabled = disabled_entity_ids(
+        {**config_entry.options, CONF_KNOWN_ENTITIES: known}, choices
+    )
+    hass.config_entries.async_update_entry(
+        config_entry,
+        options=entity_selection_options(config_entry.options, choices, disabled),
+    )
 
 
 def entity_location(

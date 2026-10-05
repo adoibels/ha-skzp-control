@@ -5,7 +5,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
-from .const import DOMAIN
+from .const import CONF_KNOWN_ENTITIES, DOMAIN
 from .device import SUPPORTED_DEVICE_MODELS, detect_device_model
 from .coordinator import SkzpCoordinator
 
@@ -58,6 +58,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN][entry.entry_id] = skzp_client
 
     try:
+        if CONF_KNOWN_ENTITIES not in entry.options:
+            from .config_entity_selection import build_entity_choices
+            from .entity_layout import (
+                existing_buffer_sensor_keys,
+                initialize_entity_selection,
+            )
+
+            choices = build_entity_choices(
+                skzp_client.model,
+                skzp_client.data,
+                existing_buffer_sensor_keys(hass, entry.entry_id),
+            )
+            initialize_entity_selection(hass, entry, choices)
+        skzp_client.platform_device_type = skzp_client.data.get("DevType")
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     except (Exception, asyncio.CancelledError):
         hass.data[DOMAIN].pop(entry.entry_id, None)

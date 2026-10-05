@@ -17,12 +17,13 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .pending_change import PendingChangeMixin
 from .const import DOMAIN
-from .device import DEFAULT_DEVICE_MODEL, build_device_info
+from .device import DEFAULT_DEVICE_MODEL, build_device_info, supports_buffer_setting_writes
 from .entity_layout import is_entity_enabled
 from .parameter_resolver import (
     get_parameter_value,
     is_parameter_definition_supported,
     resolve_parameter_write_key,
+    resolve_parameter_write_value,
 )
 
 if TYPE_CHECKING:
@@ -44,6 +45,29 @@ class ToggleSwitchDescription:
 
 
 SWITCH_DESCRIPTIONS = (
+    # Mieszacze CO1–CO3
+    *(
+        ToggleSwitchDescription(
+            key, f"ch{circuit}_mixer", "mdi:valve", on_value, off_value
+        )
+        for circuit, key, on_value, off_value in (
+            (1, "C020", "1", "0"),
+            (1, "CH1MixActive", "On", "Off"),
+            (2, "C120", "1", "0"),
+            (3, "C220", "1", "0"),
+        )
+    ),
+    # Ochrona powrotu CO1
+    *(
+        ToggleSwitchDescription(
+            key, "ch1_return_protection", "mdi:arrow-u-left-top", on_value, off_value
+        )
+        for key, on_value, off_value in (
+            ("C031", "1", "0"),
+            ("CH1ReturnProtAct", "On", "Off"),
+        )
+    ),
+    # CWU
     ToggleSwitchDescription(
         "DHWPriority",
         "dhw_priority",
@@ -51,6 +75,7 @@ SWITCH_DESCRIPTIONS = (
         "On",
         "Off",
     ),
+    # Cyrkulacja CWU
     ToggleSwitchDescription(
         "DHWCAlwaysON",
         "dhwc_always_on",
@@ -58,33 +83,13 @@ SWITCH_DESCRIPTIONS = (
         "On",
         "Off",
     ),
+    # Bufor
     ToggleSwitchDescription(
-        "C020",
-        "ch1_mixer",
-        "mdi:valve",
+        "D200",
+        "buffer",
+        "mdi:storage-tank-outline",
         "1",
         "0",
-    ),
-    ToggleSwitchDescription(
-        "C120",
-        "ch2_mixer",
-        "mdi:valve",
-        "1",
-        "0",
-    ),
-    ToggleSwitchDescription(
-        "C220",
-        "ch3_mixer",
-        "mdi:valve",
-        "1",
-        "0",
-    ),
-    ToggleSwitchDescription(
-        "CH1MixActive",
-        "ch1_mixer",
-        "mdi:valve",
-        "On",
-        "Off",
     ),
 )
 
@@ -93,11 +98,16 @@ SWITCH_KEYS = frozenset(
 )
 def get_switch_descriptions(
     model: str,
+    dev_type: Any = None,
 ) -> tuple[ToggleSwitchDescription, ...]:
     """Zwraca przełączniki do sprawdzenia dla rozpoznanego modelu."""
     if model == DEFAULT_DEVICE_MODEL:
         return ()
-    return SWITCH_DESCRIPTIONS
+    return tuple(
+        description for description in SWITCH_DESCRIPTIONS
+        if description.data_key != "D200"
+        or supports_buffer_setting_writes(dev_type or model)
+    )
 
 
 async def async_setup_entry(
@@ -111,7 +121,7 @@ async def async_setup_entry(
 
     supported_descriptions = [
         description
-        for description in get_switch_descriptions(client.model)
+        for description in get_switch_descriptions(client.model, client.data.get("DevType"))
         if is_parameter_definition_supported(
             client.data,
             description.data_key,
@@ -429,7 +439,7 @@ class SkzpToggleSwitch(SkzpSwitchBase):
         )
         await self._send_optimistic_command(
             True,
-            {command_key: self._on_value},
+            {command_key: resolve_parameter_write_value(command_key, self._on_value)},
         )
 
     async def async_turn_off(self, **kwargs: Any) -> None:
@@ -439,5 +449,5 @@ class SkzpToggleSwitch(SkzpSwitchBase):
         )
         await self._send_optimistic_command(
             False,
-            {command_key: self._off_value},
+            {command_key: resolve_parameter_write_value(command_key, self._off_value)},
         )
