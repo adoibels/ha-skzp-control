@@ -1,7 +1,9 @@
 """Obsługa integracji i komunikacji TCP."""
 
 import asyncio
+import errno
 import logging
+import socket
 import time
 
 from homeassistant.components import persistent_notification
@@ -49,15 +51,61 @@ from .device import (
 
 from .localization import async_load_localizations, translate
 from .value_decoder import get_active_alarms
+from .frame_parser import FrameTooLargeError, InvalidFrameError
 from .client.client import SkzpClient
-from .client.exceptions import MissingCredentialsError, NotConnectedError
+from .client.exceptions import ConnectionClosedError, MissingCredentialsError, NotConnectedError
 
 _LOGGER = logging.getLogger(__name__)
 
+_NETWORK_ERROR_MESSAGES = {
+    errno.ECONNREFUSED: "Connection refused",
+    errno.ECONNRESET: "Connection reset by peer",
+    errno.ECONNABORTED: "Connection aborted",
+    errno.ENETUNREACH: "Network unreachable",
+    errno.EHOSTUNREACH: "Host unreachable",
+    errno.ENETDOWN: "Network unavailable",
+    errno.ETIMEDOUT: "Operation timed out",
+    errno.EPIPE: "Connection closed while sending data",
+    10061: "Connection refused",
+    10054: "Connection reset by peer",
+    10053: "Connection aborted",
+    10051: "Network unreachable",
+    10065: "Host unreachable",
+    10050: "Network unavailable",
+    10060: "Operation timed out",
+}
+
+
 def format_communication_error(error: Exception) -> str:
-    """Zwraca opis błędu, także gdy wyjątek ma pusty komunikat."""
-    if isinstance(error, TimeoutError):
-        return "Operation timed out"
+    """Zwraca bezpieczny opis i kod błędu, bez treści odebranych danych."""
+    if isinstance(error, FrameTooLargeError):
+        return "Received data exceeds the size limit"
+    if isinstance(error, InvalidFrameError):
+        return "Invalid JSON or UTF-8 data received"
+    if isinstance(error, ConnectionClosedError):
+        return "TCP connection closed by peer"
+    if isinstance(error, NotConnectedError):
+        return "Connection unavailable or interrupted"
+    if isinstance(error, OSError):
+        code = getattr(error, "winerror", None)
+        if not isinstance(code, int):
+            code = error.errno
+        description = "Network operation failed"
+        for error_type, text in (
+            (TimeoutError, "Operation timed out"),
+            (ConnectionRefusedError, "Connection refused"),
+            (ConnectionResetError, "Connection reset by peer"),
+            (ConnectionAbortedError, "Connection aborted"),
+            (BrokenPipeError, "Connection closed while sending data"),
+            (socket.gaierror, "Address lookup failed"),
+        ):
+            if isinstance(error, error_type):
+                description = text
+                break
+        description = _NETWORK_ERROR_MESSAGES.get(code, description)
+        return f"{description} (error {code})" if isinstance(code, int) else description
+    if isinstance(error, ValueError):
+        return "Invalid value or data format"
     return type(error).__name__
 
 
@@ -227,19 +275,21 @@ class SkzpCoordinator(SkzpClient):
         )
         self._connection_issue_logged = True
 
-    def log_command_retry(
-        self, parameter: str, value: str, retry_number: int
+    def log_command_sent(
+        self, parameter: str, value: str, retry_number: int = 0
     ) -> None:
-        """Zapisuje wspólny komunikat ponowienia dla encji sterujących."""
-        _LOGGER.warning(
-            "[SKZP Control] %s:%s — Change of %s to %s not confirmed. Retry %d/%d in %g s.",
-            self.host, self.port,
-            parameter,
-            value,
-            retry_number,
-            self.command_retry_count,
-            self.command_retry_delay,
-        )
+        """Loguje jedno faktyczne wysłanie lub ponowienie komendy."""
+        if retry_number:
+            _LOGGER.debug(
+                "[SKZP Control] %s:%s — Command resent: %s = %s (retry %d/%d).",
+                self.host, self.port, parameter, value,
+                retry_number, self.command_retry_count,
+            )
+        else:
+            _LOGGER.debug(
+                "[SKZP Control] %s:%s — Command sent: %s = %s.",
+                self.host, self.port, parameter, value,
+            )
 
     @property
     def model(self) -> str:
@@ -381,6 +431,9 @@ class SkzpCoordinator(SkzpClient):
         while True:
             await asyncio.sleep(WATCHDOG_INTERVAL_SECONDS)
 
+            if not self.connected:
+                continue
+
             activity_times = [
                 value
                 for value in (self._last_data_received, self._connected_at)
@@ -399,6 +452,7 @@ class SkzpCoordinator(SkzpClient):
                 "No data for at least %s s. Restarting the connection.",
                 f"{self.no_data_timeout:g}",
             )
+            self._set_connected(False)
             self.transport.abort()
 
     async def _close_connection(self) -> None:
@@ -477,7 +531,9 @@ class SkzpCoordinator(SkzpClient):
         if version is None or version == self._registered_firmware_version:
             return
         registry = dr.async_get(self.hass)
-        device = registry.async_get_device(identifiers={(DOMAIN, self.entry_id)})
+        device = registry.async_get_device_by_identifier(
+            (DOMAIN, self.entry_id), self.entry_id
+        )
         if device is None:
             return
         if device.sw_version != version:
@@ -516,8 +572,11 @@ class SkzpCoordinator(SkzpClient):
                     f"{self.reconnect_delay:g}",
                 )
 
-    async def send_command(self, parameters: dict) -> None:
+    async def send_command(self, parameters: dict, *, profile: bool = False) -> None:
         """Wysyła komendę i tłumaczy błędy komunikacji na błędy Home Assistant."""
+        if getattr(self, "profile_import_active", False) and not profile:
+            raise HomeAssistantError(translation_domain=DOMAIN,
+                translation_key="profile_busy")
         try:
             await super().send_command(parameters)
         except NotConnectedError as err:

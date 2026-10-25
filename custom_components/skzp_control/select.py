@@ -16,6 +16,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .pending_change import PendingChangeMixin
+from .localization import entity_translation
 from .const import DOMAIN
 from .device import DEFAULT_DEVICE_MODEL, build_device_info
 from .entity_layout import is_entity_enabled
@@ -271,7 +272,7 @@ class SkzpModeSelect(PendingChangeMixin, SelectEntity):
         }
 
         self._attr_unique_id = f"{entry_id}_{description.unique_suffix}"
-        self._attr_translation_key = description.unique_suffix
+        self._attr_translation_key, self._attr_translation_placeholders = entity_translation(description.unique_suffix)
         self._attr_icon = description.icon
         self._attr_options = list(description.modes.keys())
         self._attr_current_option = None
@@ -365,19 +366,21 @@ class SkzpModeSelect(PendingChangeMixin, SelectEntity):
         self.async_write_ha_state()
 
         try:
-            async def send_attempt() -> None:
+            async def send_attempt(retry_number: int) -> None:
                 try:
+                    confirmation_event.clear()
                     command_key = resolve_parameter_write_key(self._client.data, self._data_key)
                     command = {command_key: val_to_send}
                     await self._client.send_command(command)
-                    _LOGGER.debug("[SKZP Control] %s:%s — Command sent: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.select.{self._attr_translation_key}.name', language='en'), self._client.translate(f'entity.select.{self._attr_translation_key}.state.{option}', language='en'))
+                    self._client.log_command_sent(
+                        self._client.translate(f"entity.select.{self._attr_translation_key}.name", language="en", **self._attr_translation_placeholders),
+                        self._client.translate(f"entity.select.{self._attr_translation_key}.state.{option}", language="en"),
+                        retry_number,
+                    )
                 except HomeAssistantError:
                     if generation == self._send_generation:
                         self._restore_controller_option(previous_option)
                     raise
-
-            def log_retry(retry_number: int) -> None:
-                self._client.log_command_retry(self._client.translate(f'entity.select.{self._attr_translation_key}.name', language='en'), self._client.translate(f'entity.select.{self._attr_translation_key}.state.{option}', language='en'), retry_number)
 
             if await self._client.command_manager.execute(
                 send=send_attempt,
@@ -385,13 +388,12 @@ class SkzpModeSelect(PendingChangeMixin, SelectEntity):
                 is_current=lambda: generation == self._send_generation,
                 retry_count=self._client.command_retry_count,
                 retry_delay=self._client.command_retry_delay,
-                on_retry=log_retry,
                 is_confirmed=lambda: confirmation_event.is_set()
                 and self._last_controller_option == option,
             ):
                 if generation == self._send_generation:
                     self._confirmation_event = None
-                    _LOGGER.debug("[SKZP Control] %s:%s — Change confirmed: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.select.{self._attr_translation_key}.name', language='en'), self._client.translate(f'entity.select.{self._attr_translation_key}.state.{option}', language='en'))
+                    _LOGGER.debug("[SKZP Control] %s:%s — Change confirmed: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.select.{self._attr_translation_key}.name', language='en', **self._attr_translation_placeholders), self._client.translate(f'entity.select.{self._attr_translation_key}.state.{option}', language='en'))
                 return
 
             if generation != self._send_generation:
@@ -427,13 +429,14 @@ class SkzpModeSelect(PendingChangeMixin, SelectEntity):
             confirmation_event,
             self._client.command_confirmation_timeout,
             lambda: generation == self._send_generation and self._last_controller_option == target_option,
+            is_current=lambda: generation == self._send_generation,
         )
 
     def _restore_controller_option(self, fallback_option: str | None) -> None:
         """Przywraca ostatnią opcję potwierdzoną przez sterownik."""
         restored_option = self._last_controller_option or fallback_option
         self._attr_current_option = restored_option
-        _LOGGER.debug("[SKZP Control] %s:%s — State restored: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.select.{self._attr_translation_key}.name', language='en'), self._client.translate(f'entity.select.{self._attr_translation_key}.state.{restored_option}', language='en') if restored_option is not None else "unknown")
+        _LOGGER.debug("[SKZP Control] %s:%s — State restored: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.select.{self._attr_translation_key}.name', language='en', **self._attr_translation_placeholders), self._client.translate(f'entity.select.{self._attr_translation_key}.state.{restored_option}', language='en') if restored_option is not None else "unknown")
         self._confirmed_option = restored_option
         self._clear_pending_change()
         self.async_write_ha_state()

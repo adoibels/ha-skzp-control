@@ -18,8 +18,15 @@ class EntitySupportTests(unittest.TestCase):
             fuel_caloric_as_sensor=False,
         )
 
-    def test_regular_sensor_is_created(self) -> None:
-        self.assertTrue(should_create_sensor("Supported", self.context))
+    def test_regular_sensors_ignore_buffer_capability(self) -> None:
+        for key in ("Supported", "BoilerTempAct"):
+            for buffer_enabled in (False, True):
+                with self.subTest(key=key, buffer_enabled=buffer_enabled):
+                    context = EntitySupportContext(
+                        buffer_settings_as_sensors=buffer_enabled,
+                        fuel_caloric_as_sensor=not buffer_enabled,
+                    )
+                    self.assertTrue(should_create_sensor(key, context))
 
     def test_context_uses_firmware_capabilities(self) -> None:
         readable = EntitySupportContext.from_device(
@@ -32,13 +39,6 @@ class EntitySupportTests(unittest.TestCase):
         )
         self.assertTrue(readable.buffer_settings_as_sensors)
         self.assertFalse(writable.buffer_settings_as_sensors)
-
-    def test_unrelated_sensor_is_not_affected_by_buffer_capability(self) -> None:
-        unavailable_context = EntitySupportContext(
-            buffer_settings_as_sensors=False,
-            fuel_caloric_as_sensor=True,
-        )
-        self.assertTrue(should_create_sensor("BoilerTempAct", unavailable_context))
 
     def test_buffer_sensor_depends_on_capability_or_existing_entity(self) -> None:
         unavailable_context = EntitySupportContext(

@@ -5,6 +5,7 @@ import logging
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from ipaddress import ip_address
 from typing import Any
 
 import voluptuous as vol
@@ -12,6 +13,7 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.translation import async_get_translations
 from homeassistant.helpers.selector import (
     BooleanSelector,
     NumberSelector,
@@ -74,6 +76,7 @@ from .device import (
     DEFAULT_DEVICE_MODEL,
     SUPPORTED_DEVICE_MODELS,
     detect_device_model,
+    detect_firmware_version,
 )
 from .entity_layout import (
     PAGE_BOILER_BURNER,
@@ -90,6 +93,8 @@ from .entity_layout import (
 from .entity_recommendations import recommended_disabled_entities
 from .frame_parser import FrameParser
 from .frame_download import async_create_frame_download
+from .localization import translate
+from .profile_flow import ProfileFlowMixin
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -126,6 +131,31 @@ def _build_connection_schema() -> vol.Schema:
     )
 
 
+def _validate_host(host: str) -> None:
+    """Sprawdza format adresu IP lub nazwy hosta bez połączenia z siecią."""
+    if not host or any(character.isspace() for character in host):
+        raise ValueError
+    try:
+        ip_address(host)
+        return
+    except ValueError:
+        pass
+
+    try:
+        hostname = host.removesuffix(".").encode("idna").decode("ascii")
+    except UnicodeError:
+        raise ValueError from None
+    if (
+        len(hostname) > 253
+        or re.fullmatch(r"[0-9.]+", hostname)
+        or any(
+            re.fullmatch(r"[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?", label) is None
+            for label in hostname.split(".")
+        )
+    ):
+        raise ValueError
+
+
 def _parse_port(value: Any) -> int:
     """Zwraca poprawny port TCP albo zgłasza błąd walidacji."""
     raw_value = str(value).strip()
@@ -159,7 +189,7 @@ async def _async_get_device_info(
             )
             raise CannotConnectError from err
 
-        parser = FrameParser(MAX_FRAME_BYTES)
+        parser = FrameParser(MAX_FRAME_BYTES, log_context=f"[SKZP Control] {host}:{port} — ")
         device_data: dict[str, Any] = {}
         loop = asyncio.get_running_loop()
         deadline = loop.time() + DEVICE_DATA_TIMEOUT_SECONDS
@@ -386,8 +416,32 @@ class _EntitySelectionFlowMixin:
         raise NotImplementedError
 
     async def _async_selection_menu(self) -> dict[str, Any]:
-        """Wraca do menu właściwego formularza."""
-        raise NotImplementedError
+        """Wraca do menu wyboru encji."""
+        return await self.async_step_entities()
+
+    async def _async_main_menu(self) -> dict[str, Any]:
+        """Wraca do ustawień formularza po edycji komunikacji."""
+        return await self.async_step_init()
+
+    async def async_step_entities(
+        self, user_input: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """Grupuje ekrany i działania wyboru encji bez zapisywania opcji."""
+        if (result := await self._async_prepare_selection()) is not None:
+            return result
+        menu_options = [*available_menu_pages(self._choices)]
+        if self._choices:
+            menu_options.extend(
+                ["select_all", "deselect_all", "restore_recommended"]
+            )
+        menu_options.append("init")
+        return self.async_show_menu(
+            step_id="entities",
+            menu_options=menu_options,
+            description_placeholders=selection_count_placeholders(
+                self._choices, self._disabled_entities
+            ),
+        )
 
     async def _async_step_entity_page(
         self,
@@ -413,6 +467,7 @@ class _EntitySelectionFlowMixin:
                 page,
                 self._disabled_entities,
             ),
+            description_placeholders={"number": page[-1]} if step_id == "circuit" else None,
         )
 
     async def async_step_boiler_burner(
@@ -440,17 +495,29 @@ class _EntitySelectionFlowMixin:
     async def async_step_ch1(
         self, user_input: dict[str, Any] | None = None
     ) -> dict[str, Any]:
-        return await self._async_step_entity_page(PAGE_CH1, user_input)
+        self._entity_circuit = PAGE_CH1
+        return await self.async_step_circuit(user_input)
 
     async def async_step_ch2(
         self, user_input: dict[str, Any] | None = None
     ) -> dict[str, Any]:
-        return await self._async_step_entity_page(PAGE_CH2, user_input)
+        self._entity_circuit = PAGE_CH2
+        return await self.async_step_circuit(user_input)
 
     async def async_step_ch3(
         self, user_input: dict[str, Any] | None = None
     ) -> dict[str, Any]:
-        return await self._async_step_entity_page(PAGE_CH3, user_input)
+        self._entity_circuit = PAGE_CH3
+        return await self.async_step_circuit(user_input)
+
+    async def async_step_circuit(
+        self, user_input: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """Używa wspólnych tłumaczeń dla wybranego obiegu."""
+        page = getattr(self, "_entity_circuit", None)
+        if page not in {PAGE_CH1, PAGE_CH2, PAGE_CH3}:
+            return await self.async_step_entities()
+        return await self._async_step_entity_page(page, user_input, "circuit")
 
     async def async_step_select_all(
         self, user_input: dict[str, Any] | None = None
@@ -483,7 +550,7 @@ class _EntitySelectionFlowMixin:
                 user_input,
                 self._advanced_options,
             )
-            return await self._async_selection_menu()
+            return await self._async_main_menu()
         return self.async_show_form(
             step_id="settings",
             data_schema=_build_advanced_settings_schema(self._advanced_options),
@@ -499,6 +566,7 @@ class SkzpConfigFlow(_EntitySelectionFlowMixin, config_entries.ConfigFlow, domai
         super().__init__()
         self._connection_data: dict[str, Any] | None = None
         self._device_model: str | None = None
+        self._device_firmware: str | None = None
         self._choices: list[EntityChoice] = []
         self._disabled_entities: set[str] = set()
         self._recommended_disabled: set[str] = set()
@@ -511,9 +579,6 @@ class SkzpConfigFlow(_EntitySelectionFlowMixin, config_entries.ConfigFlow, domai
         if self._connection_data is None or self._device_model is None:
             return self.async_abort(reason="cannot_read_device")
         return None
-
-    async def _async_selection_menu(self) -> dict[str, Any]:
-        return await self.async_step_entities()
 
     @callback
     def _clear_frame_download(self) -> None:
@@ -579,10 +644,14 @@ class SkzpConfigFlow(_EntitySelectionFlowMixin, config_entries.ConfigFlow, domai
         if user_input is not None:
             host = str(user_input[CONF_HOST]).strip()
             try:
+                _validate_host(host)
+            except ValueError:
+                errors[CONF_HOST] = "invalid_host"
+            try:
                 port = _parse_port(user_input[CONF_PORT])
             except ValueError:
                 errors[CONF_PORT] = "invalid_port"
-            else:
+            if not errors:
                 try:
                     model, device_data = await _async_get_device_info(host, port)
                 except CannotConnectError:
@@ -597,6 +666,9 @@ class SkzpConfigFlow(_EntitySelectionFlowMixin, config_entries.ConfigFlow, domai
                     await self.async_set_unique_id(f"{host}:{port}")
                     self._abort_if_unique_id_configured()
                     self._device_model = model
+                    self._device_firmware = detect_firmware_version(
+                        device_data.get("DevType"), include_date=False
+                    )
                     self._connection_data = {
                         CONF_HOST: host,
                         CONF_PORT: port,
@@ -623,10 +695,18 @@ class SkzpConfigFlow(_EntitySelectionFlowMixin, config_entries.ConfigFlow, domai
         """Pozwala wybrać konfigurację szybką lub zaawansowaną."""
         if self._connection_data is None or self._device_model is None:
             return self.async_abort(reason="cannot_read_device")
+        firmware = ""
+        if self._device_firmware:
+            await async_get_translations(
+                self.hass, self.hass.config.language, "common", {DOMAIN}
+            )
+            firmware = "  \n" + translate(
+                self.hass, "common.firmware_version", version=self._device_firmware
+            )
         return self.async_show_menu(
             step_id="selection_method",
             menu_options=["quick", "advanced"],
-            description_placeholders={"model": self._device_model},
+            description_placeholders={"model": self._device_model, "firmware": firmware},
         )
 
     async def async_step_quick(
@@ -640,36 +720,23 @@ class SkzpConfigFlow(_EntitySelectionFlowMixin, config_entries.ConfigFlow, domai
     async def async_step_advanced(
         self, user_input: dict[str, Any] | None = None
     ) -> dict[str, Any]:
-        """Rozpoczyna zaawansowany wybór encji na osobnych ekranach."""
+        """Otwiera zaawansowaną konfigurację wykrytego sterownika."""
         if self._connection_data is None or self._device_model is None:
             return self.async_abort(reason="cannot_read_device")
 
         self._disabled_entities = set(self._recommended_disabled)
         self._advanced_options = _default_advanced_options()
-        return await self.async_step_entities()
+        return await self.async_step_init()
 
-    async def async_step_entities(
+    async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> dict[str, Any]:
-        """Wyświetla menu ekranów wyboru encji oraz ustawień komunikacji."""
-        if self._connection_data is None or self._device_model is None:
-            return self.async_abort(reason="cannot_read_device")
-        placeholders = selection_count_placeholders(
-            self._choices,
-            self._disabled_entities,
-        )
-        placeholders["model"] = self._device_model
+        """Wyświetla główne menu zaawansowanej konfiguracji urządzenia."""
+        if (result := await self._async_prepare_selection()) is not None:
+            return result
         return self.async_show_menu(
-            step_id="entities",
-            menu_options=[
-                *available_menu_pages(self._choices),
-                "select_all",
-                "deselect_all",
-                "restore_recommended",
-                "settings",
-                "finish",
-            ],
-            description_placeholders=placeholders,
+            step_id="init",
+            menu_options=["entities", "settings", "finish"],
         )
 
     async def async_step_restore_recommended(
@@ -709,10 +776,14 @@ class SkzpConfigFlow(_EntitySelectionFlowMixin, config_entries.ConfigFlow, domai
         if user_input is not None:
             host = str(user_input[CONF_HOST]).strip()
             try:
+                _validate_host(host)
+            except ValueError:
+                errors[CONF_HOST] = "invalid_host"
+            try:
                 port = _parse_port(user_input[CONF_PORT])
             except ValueError:
                 errors[CONF_PORT] = "invalid_port"
-            else:
+            if not errors:
                 current_host = str(entry.data[CONF_HOST]).strip()
                 current_port = int(entry.data[CONF_PORT])
                 if host == current_host and port == current_port:
@@ -764,7 +835,7 @@ class SkzpConfigFlow(_EntitySelectionFlowMixin, config_entries.ConfigFlow, domai
         )
 
 
-class SkzpOptionsFlow(_EntitySelectionFlowMixin, config_entries.OptionsFlowWithReload):
+class SkzpOptionsFlow(ProfileFlowMixin, _EntitySelectionFlowMixin, config_entries.OptionsFlowWithReload):
     """Obsługuje zmianę encji i ustawień komunikacji integracji."""
 
     def __init__(self) -> None:
@@ -777,9 +848,6 @@ class SkzpOptionsFlow(_EntitySelectionFlowMixin, config_entries.OptionsFlowWithR
     async def _async_prepare_selection(self) -> None:
         """Ładuje zapisane opcje przed edycją wyboru."""
         await self._async_ensure_state()
-
-    async def _async_selection_menu(self) -> dict[str, Any]:
-        return await self.async_step_init()
 
     async def _async_get_device_context(
         self,
@@ -836,21 +904,9 @@ class SkzpOptionsFlow(_EntitySelectionFlowMixin, config_entries.OptionsFlowWithR
     ) -> dict[str, Any]:
         """Wyświetla menu ekranów opcji integracji."""
         await self._async_ensure_state()
-        placeholders = selection_count_placeholders(
-            self._choices,
-            self._disabled_entities,
-        )
-        placeholders["model"] = self._model
-        menu_options = [*available_menu_pages(self._choices)]
-        if self._choices:
-            menu_options.extend(
-                ["select_all", "deselect_all", "restore_recommended"]
-            )
-        menu_options.extend(["settings", "finish"])
         return self.async_show_menu(
             step_id="init",
-            menu_options=menu_options,
-            description_placeholders=placeholders,
+            menu_options=["entities", "profiles", "settings", "finish"],
         )
 
     async def async_step_restore_recommended(
@@ -861,12 +917,12 @@ class SkzpOptionsFlow(_EntitySelectionFlowMixin, config_entries.OptionsFlowWithR
         _model, device_data = await self._async_get_device_context()
         if device_data is None:
             # Nieudany odczyt nie zmienia bieżącego wyboru.
-            return await self.async_step_init()
+            return await self.async_step_entities()
         self._disabled_entities.difference_update(selectable_entity_ids(self._choices))
         self._disabled_entities.update(
             recommended_disabled_entities(self._choices, device_data)
         )
-        return await self.async_step_init()
+        return await self.async_step_entities()
 
     async def async_step_finish(
         self, user_input: dict[str, Any] | None = None

@@ -6,7 +6,7 @@ from ..parameter_resolver import resolve_parameter_write_key
 from .transport import TcpTransport
 from .command_manager import CommandManager
 from .protocol import SkzpProtocol
-from .exceptions import NotConnectedError
+from .exceptions import ConnectionClosedError, NotConnectedError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,7 +17,8 @@ class SkzpClient:
         self.command_manager = CommandManager()
         self.data = {}
         self._max_frame_bytes = max_frame_bytes
-        self._parser = FrameParser(max_frame_bytes)
+        self._log_context = f"[SKZP Control] {host}:{port} — "
+        self._parser = FrameParser(max_frame_bytes, log_context=self._log_context)
         # Blokada obejmuje sprawdzenie połączenia, dane autoryzacji i zapis komendy.
         self._command_lock = asyncio.Lock()
 
@@ -31,23 +32,24 @@ class SkzpClient:
 
     async def connect(self):
         await self.transport.connect()
-        self._parser = FrameParser(self._max_frame_bytes)
+        self._parser = FrameParser(self._max_frame_bytes, log_context=self._log_context)
         for key in ("DevId", "DevPin", "Token"):
             self.data.pop(key, None)
 
     async def disconnect(self):
         if self._parser.buffered_bytes:
             _LOGGER.debug(
-                "Incomplete JSON frame discarded on disconnect (%d bytes).",
+                "%sIncomplete JSON frame discarded on disconnect (%d bytes).",
+                self._log_context,
                 self._parser.buffered_bytes,
             )
         await self.transport.disconnect()
-        self._parser = FrameParser(self._max_frame_bytes)
+        self._parser = FrameParser(self._max_frame_bytes, log_context=self._log_context)
 
     async def receive(self):
         chunk = await self.transport.read()
         if not chunk:
-            raise ConnectionError("TCP connection closed")
+            raise ConnectionClosedError("TCP connection closed")
         return self._decode_chunk(chunk)
 
     def _decode_chunk(self, chunk):

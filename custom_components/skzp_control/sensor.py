@@ -21,6 +21,7 @@ from .device import (
     build_device_info,
 )
 from .entity_layout import existing_buffer_sensor_keys, is_entity_enabled
+from .localization import entity_translation
 from .entity_support import EntitySupportContext, should_create_sensor
 from .parameter_resolver import (
     get_parameter_value,
@@ -263,7 +264,7 @@ class SkzpSensor(SensorEntity):
             meta.get("device_class") == SensorDeviceClass.TEMPERATURE
         )
 
-        self._attr_translation_key = meta.get("translation_key", key.lower())
+        self._attr_translation_key, self._attr_translation_placeholders = entity_translation(meta.get("translation_key", key.lower()))
         self._attr_unique_id = f"{entry_id}_{key.lower()}"
         self._attr_native_unit_of_measurement = meta.get("unit")
         self._attr_icon = meta.get("icon")

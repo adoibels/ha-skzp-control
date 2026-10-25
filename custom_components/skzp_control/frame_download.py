@@ -1,11 +1,13 @@
 """Tymczasowe pobieranie ramki nieobsługiwanego sterownika."""
 
 import json
+import re
 import secrets
 import time
 from collections.abc import Callable, Mapping
 from datetime import timedelta
 from typing import Any
+from urllib.parse import quote
 
 from aiohttp import web
 from homeassistant.components.diagnostics import async_redact_data
@@ -21,6 +23,25 @@ _DATA_DOWNLOAD_VIEW = f"{DOMAIN}_frame_download"
 _DOWNLOAD_PATH = f"/api/{DOMAIN}/frame"
 
 
+def _profile_filename(name: str) -> str:
+    """Zachowuje nazwę profilu, zastępując znaki niedozwolone w pliku."""
+    name = re.sub(r'[<>:"/\\|?*\x00-\x1f\x7f]', "_", name).strip().rstrip(". ")
+    if not name:
+        name = "skzp_profile"
+    if name.split(".", 1)[0].upper() in {
+        "CON", "PRN", "AUX", "NUL", *(f"COM{i}" for i in range(1, 10)),
+        *(f"LPT{i}" for i in range(1, 10)),
+    }:
+        name = "_" + name
+    return name if name.lower().endswith(".json") else name + ".json"
+
+
+def _download_disposition(filename: str) -> str:
+    """Przekazuje nazwę UTF-8 i zapasową nazwę ASCII przeglądarkom."""
+    fallback = filename.encode("ascii", errors="replace").decode("ascii").replace("?", "_")
+    return f'attachment; filename="{fallback}"; filename*=UTF-8\'\'{quote(filename, safe="")}'
+
+
 class FrameDownloadView(HomeAssistantView):
     """Udostępnia oczyszczone ramki przez uwierzytelnione odnośniki HA."""
 
@@ -29,7 +50,7 @@ class FrameDownloadView(HomeAssistantView):
     requires_auth = True
 
     def __init__(self) -> None:
-        self.frames: dict[str, tuple[float, bytes]] = {}
+        self.frames: dict[str, tuple[float, bytes, str]] = {}
 
     async def get(
         self, request: web.Request, download_id: str
@@ -38,7 +59,7 @@ class FrameDownloadView(HomeAssistantView):
         frame = self.frames.get(download_id)
         if frame is None:
             raise web.HTTPNotFound
-        expires_at, payload = frame
+        expires_at, payload, filename = frame
         if time.monotonic() >= expires_at:
             self.frames.pop(download_id, None)
             raise web.HTTPNotFound
@@ -46,7 +67,7 @@ class FrameDownloadView(HomeAssistantView):
             body=payload,
             content_type="application/json",
             headers={
-                "Content-Disposition": 'attachment; filename="skzp_frame.json"',
+                "Content-Disposition": _download_disposition(filename),
                 "Cache-Control": "no-store",
                 "X-Content-Type-Options": "nosniff",
             },
@@ -55,7 +76,7 @@ class FrameDownloadView(HomeAssistantView):
 
 @callback
 def async_create_frame_download(
-    hass: HomeAssistant, frame: Mapping[str, Any]
+    hass: HomeAssistant, frame: Mapping[str, Any], *, profile: bool = False
 ) -> tuple[str, Callable[[], None]]:
     """Zwraca podpisany odnośnik i funkcję usuwającą ramkę z pamięci."""
     view = hass.data.get(_DATA_DOWNLOAD_VIEW)
@@ -77,7 +98,8 @@ def async_create_frame_download(
         + "\n"
     ).encode("utf-8")
     lifetime = DOWNLOAD_LIFETIME.total_seconds()
-    view.frames[download_id] = (time.monotonic() + lifetime, payload)
+    filename = _profile_filename(str(frame.get("_meta", {}).get("name", ""))) if profile else "skzp_frame.json"
+    view.frames[download_id] = (time.monotonic() + lifetime, payload, filename)
     expiry_timer = hass.loop.call_later(
         lifetime, view.frames.pop, download_id, None
     )

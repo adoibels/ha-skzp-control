@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
 from .const import CONF_DISABLED_ENTITIES, CONF_KNOWN_ENTITIES, DOMAIN
+from .localization import selection_translation_key
 
 PAGE_BOILER_BURNER = "boiler_burner"
 PAGE_DHW_BUFFER = "dhw_buffer"
@@ -330,8 +331,8 @@ class EntityChoice:
 
     @property
     def option_id(self) -> str:
-        """Zwraca klucz opcji formularza i jej tłumaczenia."""
-        return f"{self.platform}_{self.translation_key or self.unique_suffix}"
+        """Zwraca wspólny klucz etykiety opcji formularza."""
+        return selection_translation_key(self.translation_key or self.unique_suffix)
 
 
 def make_selection_id(platform: str, key: str) -> str:

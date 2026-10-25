@@ -50,9 +50,11 @@ DIAGNOSTIC_SENSORS: dict[str, dict[str, Any]] = {
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "AlarmsList": {
+        "translation_key": "active_alarms",
         "icon": "mdi:alert-outline",
     },
     "DevStatus_Mode": {
+        "translation_key": "controller_status",
         "decoder": decode_devstatus_mode,
         "icon": "mdi:state-machine",
         "device_class": SensorDeviceClass.ENUM,
@@ -71,11 +73,12 @@ SENSOR_MAP: dict[str, dict[str, Any]] = {
     **DIAGNOSTIC_SENSORS,
 
     # Kocioł / Palnik
-    "BoilerTempAct": _temperature_sensor(),
-    "CH1ReturnTempAct": _temperature_sensor(),
-    "BuTempAct": _temperature_sensor(),
-    "ExhaustTempAct": _temperature_sensor(),
+    "BoilerTempAct": _temperature_sensor("boiler_temp_current"),
+    "CH1ReturnTempAct": _temperature_sensor("boiler_return_temp"),
+    "BuTempAct": _temperature_sensor("burner_temp"),
+    "ExhaustTempAct": _temperature_sensor("exhaust_temp"),
     "AN01": {
+        "translation_key": "oxygen",
         "icon": "mdi:molecule",
         "unit": PERCENTAGE,
         "divider": 100,
@@ -84,18 +87,21 @@ SENSOR_MAP: dict[str, dict[str, Any]] = {
         "suggested_display_precision": 1,
     },
     "BuPhotoAct": {
+        "translation_key": "flame_sensor",
         "icon": "mdi:brightness-percent",
         "unit": PERCENTAGE,
         "state_class": SensorStateClass.MEASUREMENT,
     },
-    "K003": _temperature_sensor(icon="mdi:thermometer-minus"),
+    "K003": _temperature_sensor("boiler_reduced_setpoint", icon="mdi:thermometer-minus"),
     "DevStatus_Power": {
+        "translation_key": "boiler_power_current",
         "decoder": decode_devstatus_power,
         "icon": "mdi:gauge",
         "unit": PERCENTAGE,
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "DevStatus_Fan": {
+        "translation_key": "fan_power",
         "decoder": decode_devstatus_fan,
         "icon": "mdi:fan",
         "unit": PERCENTAGE,
@@ -104,6 +110,7 @@ SENSOR_MAP: dict[str, dict[str, Any]] = {
 
     # Paliwo
     "B060": {
+        "translation_key": "fuel_capacity",
         "icon": "mdi:tray-full",
         "unit": UnitOfMass.KILOGRAMS,
         "divider": 1,
@@ -111,6 +118,7 @@ SENSOR_MAP: dict[str, dict[str, Any]] = {
         "suggested_display_precision": 0,
     },
     "B062": {
+        "translation_key": "fuel_remaining",
         "icon": "mdi:tray",
         "unit": UnitOfMass.KILOGRAMS,
         "divider": 10,
@@ -119,6 +127,7 @@ SENSOR_MAP: dict[str, dict[str, Any]] = {
         "suggested_display_precision": 1,
     },
     "BuTotalFuel": {
+        "translation_key": "fuel_consumption_total",
         "icon": "mdi:sack",
         "unit": UnitOfMass.KILOGRAMS,
         "divider": 100,
@@ -126,6 +135,7 @@ SENSOR_MAP: dict[str, dict[str, Any]] = {
         "state_class": SensorStateClass.TOTAL_INCREASING,
     },
     "Bu24hFuel": {
+        "translation_key": "fuel_consumption_daily",
         "icon": "mdi:sack",
         "unit": UnitOfMass.KILOGRAMS,
         "divider": 100,
@@ -133,12 +143,14 @@ SENSOR_MAP: dict[str, dict[str, Any]] = {
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "BuActualFuel": {
+        "translation_key": "fuel_consumption_rate",
         "icon": "mdi:sack",
         "unit": "kg/h",
         "divider": 100,
         "state_class": SensorStateClass.MEASUREMENT,
     },
     "BuFuelCaloric": {
+        "translation_key": "fuel_caloric",
         "icon": "mdi:fire",
         "unit": "kWh/kg",
         "state_class": SensorStateClass.MEASUREMENT,
@@ -147,20 +159,20 @@ SENSOR_MAP: dict[str, dict[str, Any]] = {
     },
 
     # CWU
-    "DHWTempAct": _temperature_sensor(icon="mdi:water-thermometer"),
+    "DHWTempAct": _temperature_sensor("dhw_temp_current", icon="mdi:water-thermometer"),
 
     # Regulator pogodowy
-    "WeaTempAct": _temperature_sensor(icon="mdi:sun-thermometer-outline"),
+    "WeaTempAct": _temperature_sensor("outdoor_temp", icon="mdi:sun-thermometer-outline"),
 
     # Bufor
-    "D201": _temperature_sensor(),
-    "D202": _temperature_sensor(),
+    "D201": _temperature_sensor("buffer_temp_top"),
+    "D202": _temperature_sensor("buffer_temp_bottom"),
     "D203": {
-        **_temperature_sensor(icon="mdi:thermometer-check"),
+        **_temperature_sensor("buffer_temp_setpoint", icon="mdi:thermometer-check"),
         "suggested_display_precision": 0,
     },
     "D204": {
-        **_temperature_sensor(icon="mdi:thermometer-lines"),
+        **_temperature_sensor("buffer_hysteresis", icon="mdi:thermometer-lines"),
         "suggested_display_precision": 0,
     },
 

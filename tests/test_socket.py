@@ -44,7 +44,7 @@ class SocketTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(c._task); self.assertIsNone(c._watchdog_task)
 
     async def test_valid_frame_before_invalid_frame_is_retained(self):
-        from test_core import Writer, make_client
+        from helpers import Writer, make_client
         w=Writer(); c=make_client(w)
         w.reader.feed_data(b'{"x":1}{"Token":secret}')
         messages=await c.receive()

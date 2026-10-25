@@ -12,6 +12,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .const import DOMAIN
 from .device import DEFAULT_DEVICE_MODEL, build_device_info
 from .entity_layout import is_entity_enabled
+from .localization import entity_translation
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -83,7 +84,7 @@ class DevStatusBinarySensor(BinarySensorEntity):
         self._client = client
         self._key = key
         self._index = index
-        self._attr_translation_key = key.lower()
+        self._attr_translation_key, self._attr_translation_placeholders = entity_translation(key.lower())
         self._attr_unique_id = f"{entry_id}_{key.lower()}"
         self._attr_is_on = None
         self._attr_available = False

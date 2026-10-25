@@ -18,6 +18,7 @@ for name in ('homeassistant', 'homeassistant.components', 'homeassistant.compone
         parent, child = name.rsplit('.', 1); setattr(sys.modules[parent], child, mod)
 sys.modules['homeassistant.config_entries'].ConfigEntry = object
 sys.modules['homeassistant.core'].HomeAssistant = object
+sys.modules['homeassistant.core'].callback = lambda function: function
 sys.modules['homeassistant.const'].CONF_HOST = 'host'
 sys.modules['homeassistant.const'].CONF_PORT = 'port'
 for name in ('ConfigEntryError', 'ConfigEntryNotReady', 'HomeAssistantError'):

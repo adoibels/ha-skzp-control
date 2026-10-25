@@ -3,26 +3,26 @@
     "step": {
       "user": {
         "title": "SKZP Control setup",
-        "description": "Enter the IP address and TCP port of the SKZP controller's LAN/Wi-Fi module.",
+        "description": "Connect to the controller to begin setup.",
         "data": {
           "host": "IP address",
           "port": "TCP port"
         },
         "data_description": {
-          "host": "Example: 192.168.1.100",
-          "port": "Example: 80"
+          "host": "Address of the controller's LAN/Wi-Fi module on the local network.",
+          "port": "TCP port number configured in the LAN/Wi-Fi module."
         }
       },
       "unsupported_device": {
         "title": "Unsupported controller",
-        "description": "Data received from controller: {dev_type}.\n\nThis model is not yet supported by SKZP Control. No device or entities will be created.\n\n[Download data frame (.json)]({download_url})\n\nThe file contains only the received frame, with DevId, DevPin and Token redacted. The link is valid for 10 minutes or until this form is closed. Select Back to try reading the data again.",
+        "description": "Data received from controller: {dev_type}.\n\nThis model is not yet supported by SKZP Control. No device or entities will be created.\n\n[Download controller data (.json)]({download_url})\n\nThe file contains only the received data, with DevId, DevPin and Token redacted. The link is valid for 10 minutes or until this form is closed. Select Back to try reading the data again.",
         "menu_options": {
-          "retry_connection": "Back"
+          "retry_connection": "← Back"
         }
       },
       "selection_method": {
         "title": "Setup method",
-        "description": "Detected controller: {model}. Choose a setup method.",
+        "description": "Detected controller: {model}.{firmware}\n\nChoose a setup method.",
         "menu_options": {
           "quick": "Quick",
           "advanced": "Advanced"
@@ -32,9 +32,23 @@
           "advanced": "Customize entity selection and integration settings."
         }
       },
-      "entities": {
+      "init": {
         "title": "SKZP Control",
-        "description": "Controller {model}\n\nSelected {selected} of {total} available entities.",
+        "description": "Adjust entity selection and integration settings.",
+        "menu_options": {
+          "entities": "Entity selection",
+          "settings": "Advanced settings",
+          "finish": "Save settings"
+        },
+        "menu_option_descriptions": {
+          "entities": "Select controller readings, states and parameters.",
+          "settings": "Change control, communication and notification settings.",
+          "finish": "Save entity selection and settings."
+        }
+      },
+      "entities": {
+        "title": "Entity selection",
+        "description": "Selected entities: {selected} / {total}\n\nWhen finished, return to the main menu and select “Save settings”.",
         "menu_options": {
           "boiler_burner": "Boiler / Burner",
           "dhw_buffer": "DHW / Buffer",
@@ -45,21 +59,7 @@
           "select_all": "Select all",
           "deselect_all": "Deselect all",
           "restore_recommended": "Restore recommended",
-          "settings": "Advanced settings",
-          "finish": "Save settings"
-        },
-        "menu_option_descriptions": {
-          "boiler_burner": "Select boiler and burner entities.",
-          "dhw_buffer": "Select DHW and buffer entities.",
-          "dhw": "Select DHW entities.",
-          "ch1": "Select CH1 circuit entities.",
-          "ch2": "Select CH2 circuit entities.",
-          "ch3": "Select CH3 circuit entities.",
-          "select_all": "Select all available entities.",
-          "deselect_all": "Deselect all optional entities.",
-          "restore_recommended": "Restore the recommended entity selection.",
-          "settings": "Change control, communication and notification settings.",
-          "finish": "Save entity selection and settings."
+          "init": "← Back"
         }
       },
       "boiler_burner": {
@@ -132,9 +132,9 @@
           }
         }
       },
-      "ch1": {
-        "title": "CH1 circuit",
-        "description": "Select CH1 circuit readings, states and settings.",
+      "circuit": {
+        "title": "CH{number} circuit",
+        "description": "Select CH{number} circuit readings, states and settings.",
         "sections": {
           "sensors": {
             "name": "Sensors and states",
@@ -153,54 +153,6 @@
               "room": "Room regulator",
               "weather": "Weather regulator",
               "return": "Return protection"
-            }
-          }
-        }
-      },
-      "ch2": {
-        "title": "CH2 circuit",
-        "description": "Select CH2 circuit readings, states and settings.",
-        "sections": {
-          "sensors": {
-            "name": "Sensors and states",
-            "data": {
-              "circuit": "Circuit",
-              "mixer": "Mixer",
-              "room": "Room regulator"
-            }
-          },
-          "configuration": {
-            "name": "Configuration",
-            "data": {
-              "work_mode": "Circuit",
-              "mixer": "Mixer",
-              "temperatures": "Temperatures",
-              "room": "Room regulator",
-              "weather": "Weather regulator"
-            }
-          }
-        }
-      },
-      "ch3": {
-        "title": "CH3 circuit",
-        "description": "Select CH3 circuit readings, states and settings.",
-        "sections": {
-          "sensors": {
-            "name": "Sensors and states",
-            "data": {
-              "circuit": "Circuit",
-              "mixer": "Mixer",
-              "room": "Room regulator"
-            }
-          },
-          "configuration": {
-            "name": "Configuration",
-            "data": {
-              "work_mode": "Circuit",
-              "mixer": "Mixer",
-              "temperatures": "Temperatures",
-              "room": "Room regulator",
-              "weather": "Weather regulator"
             }
           }
         }
@@ -237,18 +189,23 @@
         "data": {
           "host": "IP address",
           "port": "TCP port"
+        },
+        "data_description": {
+          "host": "Address of the controller's LAN/Wi-Fi module on the local network.",
+          "port": "TCP port number configured in the LAN/Wi-Fi module."
         }
       }
     },
     "error": {
       "cannot_connect": "Could not connect to the controller. Check the IP address and TCP port, and make sure the LAN/Wi-Fi module is reachable on the network.",
-      "cannot_read_device": "Connected, but the controller did not send a complete data frame.",
+      "cannot_read_device": "Connected to the controller, but no valid data was received.",
+      "invalid_host": "Enter a valid IP address or hostname.",
       "invalid_port": "Enter a port number from 1 to 65535."
     },
     "abort": {
       "already_configured": "This device is already configured.",
       "already_in_progress": "Setup for this controller is already open. Close the previous form or restart Home Assistant.",
-      "cannot_read_device": "Setup cannot be completed without a complete data frame from the controller.",
+      "cannot_read_device": "Setup cannot be completed without valid controller data.",
       "reconfigure_successful": "Connection settings have been saved."
     }
   },
@@ -256,7 +213,23 @@
     "step": {
       "init": {
         "title": "SKZP Control",
-        "description": "Controller {model}\n\nSelected {selected} of {total} available entities.",
+        "description": "Adjust entity selection, integration settings and settings profiles.",
+        "menu_options": {
+          "entities": "Entity selection",
+          "profiles": "Settings profiles",
+          "settings": "Advanced settings",
+          "finish": "Save settings"
+        },
+        "menu_option_descriptions": {
+          "entities": "Select controller readings, states and parameters.",
+          "profiles": "Manage saved controller settings.",
+          "settings": "Change control, communication and notification settings.",
+          "finish": "Save entity selection and settings."
+        }
+      },
+      "entities": {
+        "title": "Entity selection",
+        "description": "Selected entities: {selected} / {total}\n\nWhen finished, return to the main menu and select “Save settings”.",
         "menu_options": {
           "boiler_burner": "Boiler / Burner",
           "dhw_buffer": "DHW / Buffer",
@@ -267,21 +240,7 @@
           "select_all": "Select all",
           "deselect_all": "Deselect all",
           "restore_recommended": "Restore recommended",
-          "settings": "Advanced settings",
-          "finish": "Save settings"
-        },
-        "menu_option_descriptions": {
-          "boiler_burner": "Select boiler and burner entities.",
-          "dhw_buffer": "Select DHW and buffer entities.",
-          "dhw": "Select DHW entities.",
-          "ch1": "Select CH1 circuit entities.",
-          "ch2": "Select CH2 circuit entities.",
-          "ch3": "Select CH3 circuit entities.",
-          "select_all": "Select all available entities.",
-          "deselect_all": "Deselect all optional entities.",
-          "restore_recommended": "Restore the recommended entity selection.",
-          "settings": "Change control, communication and notification settings.",
-          "finish": "Save entity selection and settings."
+          "init": "← Back"
         }
       },
       "settings": {
@@ -380,9 +339,9 @@
           }
         }
       },
-      "ch1": {
-        "title": "CH1 circuit",
-        "description": "Select CH1 circuit readings, states and settings.",
+      "circuit": {
+        "title": "CH{number} circuit",
+        "description": "Select CH{number} circuit readings, states and settings.",
         "sections": {
           "sensors": {
             "name": "Sensors and states",
@@ -405,54 +364,512 @@
           }
         }
       },
-      "ch2": {
-        "title": "CH2 circuit",
-        "description": "Select CH2 circuit readings, states and settings.",
+      "profiles": {
+        "title": "Settings profiles",
+        "menu_options": {
+          "profile_save": "Save current settings",
+          "profile_import": "Import profile",
+          "profile_manage": "Manage profiles",
+          "init": "← Back"
+        },
+        "menu_option_descriptions": {
+          "profile_save": "{profile_save_description}",
+          "profile_import": "{profile_import_description}",
+          "profile_manage": "Load, edit or delete a saved profile."
+        }
+      },
+      "profile_save": {
+        "title": "Save current settings",
+        "menu_options": {
+          "profile_save_new": "Create a new profile",
+          "profile_save_update": "Update an existing profile",
+          "profiles": "← Back"
+        }
+      },
+      "profile_import": {
+        "title": "Import profile",
+        "menu_options": {
+          "profile_import_new": "Create a new profile",
+          "profile_import_update": "Update an existing profile",
+          "profiles": "← Back"
+        }
+      },
+      "profile_settings": {
+        "title": "{form_title}",
+        "description": "{form_description}",
         "sections": {
-          "sensors": {
-            "name": "Sensors and states",
+          "boiler_burner": {
+            "name": "{group_boiler_burner}",
             "data": {
-              "circuit": "Circuit",
-              "mixer": "Mixer",
-              "room": "Room regulator"
+              "boiler_mode": "{label_boiler_mode}",
+              "boiler_temp_setpoint": "{label_boiler_temp_setpoint}",
+              "boiler_hysteresis": "{label_boiler_hysteresis}",
+              "boiler_temp_reduction": "{label_boiler_temp_reduction}",
+              "burner_mode": "{label_burner_mode}",
+              "no_fire_time": "{label_no_fire_time}",
+              "clean_period": "{label_clean_period}",
+              "clean_time": "{label_clean_time}",
+              "modulation_min": "{label_modulation_min}",
+              "modulation_max": "{label_modulation_max}",
+              "modulation_dynamics": "{label_modulation_dynamics}",
+              "overtemp_time": "{label_overtemp_time}",
+              "fuel_caloric": "{label_fuel_caloric}",
+              "fuel_correction": "{label_fuel_correction}",
+              "exhaust_temp_max": "{label_exhaust_temp_max}",
+              "standby_feed_time": "{label_standby_feed_time}",
+              "standby_period": "{label_standby_period}",
+              "standby_air": "{label_standby_air}",
+              "standby_air_time": "{label_standby_air_time}",
+              "standby_exit_time": "{label_standby_exit_time}",
+              "air_min": "{label_air_min}",
+              "air_max": "{label_air_max}",
+              "feed_air_boost": "{label_feed_air_boost}",
+              "interval_feed_time": "{label_interval_feed_time}",
+              "interval_break_time": "{label_interval_break_time}",
+              "interval_air": "{label_interval_air}",
+              "feeder_efficiency": "{label_feeder_efficiency}",
+              "max_feed_time": "{label_max_feed_time}",
+              "boiler_power": "{label_boiler_power}"
+            },
+            "data_description": {
+              "boiler_mode": "{value_boiler_mode}",
+              "boiler_temp_setpoint": "{value_boiler_temp_setpoint}",
+              "boiler_hysteresis": "{value_boiler_hysteresis}",
+              "boiler_temp_reduction": "{value_boiler_temp_reduction}",
+              "burner_mode": "{value_burner_mode}",
+              "no_fire_time": "{value_no_fire_time}",
+              "clean_period": "{value_clean_period}",
+              "clean_time": "{value_clean_time}",
+              "modulation_min": "{value_modulation_min}",
+              "modulation_max": "{value_modulation_max}",
+              "modulation_dynamics": "{value_modulation_dynamics}",
+              "overtemp_time": "{value_overtemp_time}",
+              "fuel_caloric": "{value_fuel_caloric}",
+              "fuel_correction": "{value_fuel_correction}",
+              "exhaust_temp_max": "{value_exhaust_temp_max}",
+              "standby_feed_time": "{value_standby_feed_time}",
+              "standby_period": "{value_standby_period}",
+              "standby_air": "{value_standby_air}",
+              "standby_air_time": "{value_standby_air_time}",
+              "standby_exit_time": "{value_standby_exit_time}",
+              "air_min": "{value_air_min}",
+              "air_max": "{value_air_max}",
+              "feed_air_boost": "{value_feed_air_boost}",
+              "interval_feed_time": "{value_interval_feed_time}",
+              "interval_break_time": "{value_interval_break_time}",
+              "interval_air": "{value_interval_air}",
+              "feeder_efficiency": "{value_feeder_efficiency}",
+              "max_feed_time": "{value_max_feed_time}",
+              "boiler_power": "{value_boiler_power}"
             }
           },
-          "configuration": {
-            "name": "Configuration",
+          "dhw_buffer": {
+            "name": "{group_dhw_buffer}",
             "data": {
-              "work_mode": "Circuit",
-              "mixer": "Mixer",
-              "temperatures": "Temperatures",
-              "room": "Room regulator",
-              "weather": "Weather regulator"
+              "buffer": "{label_buffer}",
+              "buffer_temp_setpoint": "{label_buffer_temp_setpoint}",
+              "buffer_hysteresis": "{label_buffer_hysteresis}",
+              "dhw_mode": "{label_dhw_mode}",
+              "dhw_temp_setpoint": "{label_dhw_temp_setpoint}",
+              "dhw_hysteresis": "{label_dhw_hysteresis}",
+              "dhw_overshoot": "{label_dhw_overshoot}",
+              "dhw_priority": "{label_dhw_priority}",
+              "dhwc_mode": "{label_dhwc_mode}",
+              "dhwc_temp_on": "{label_dhwc_temp_on}",
+              "dhwc_work_time": "{label_dhwc_work_time}",
+              "dhwc_break_time": "{label_dhwc_break_time}",
+              "dhwc_always_on": "{label_dhwc_always_on}"
+            },
+            "data_description": {
+              "buffer": "{value_buffer}",
+              "buffer_temp_setpoint": "{value_buffer_temp_setpoint}",
+              "buffer_hysteresis": "{value_buffer_hysteresis}",
+              "dhw_mode": "{value_dhw_mode}",
+              "dhw_temp_setpoint": "{value_dhw_temp_setpoint}",
+              "dhw_hysteresis": "{value_dhw_hysteresis}",
+              "dhw_overshoot": "{value_dhw_overshoot}",
+              "dhw_priority": "{value_dhw_priority}",
+              "dhwc_mode": "{value_dhwc_mode}",
+              "dhwc_temp_on": "{value_dhwc_temp_on}",
+              "dhwc_work_time": "{value_dhwc_work_time}",
+              "dhwc_break_time": "{value_dhwc_break_time}",
+              "dhwc_always_on": "{value_dhwc_always_on}"
+            }
+          },
+          "ch1": {
+            "name": "{group_ch1}",
+            "data": {
+              "ch1_mode": "{label_ch1_mode}",
+              "ch1_mixer": "{label_ch1_mixer}",
+              "ch1_mixer_opening_min": "{label_ch1_mixer_opening_min}",
+              "ch1_mixer_opening_max": "{label_ch1_mixer_opening_max}",
+              "ch1_mixer_gain": "{label_ch1_mixer_gain}",
+              "ch1_mixer_stabilization_time": "{label_ch1_mixer_stabilization_time}",
+              "ch1_mixer_temp_setpoint": "{label_ch1_mixer_temp_setpoint}",
+              "ch1_mixer_temp_min": "{label_ch1_mixer_temp_min}",
+              "ch1_mixer_temp_max": "{label_ch1_mixer_temp_max}",
+              "ch1_mixer_temp_reduction": "{label_ch1_mixer_temp_reduction}",
+              "ch1_room_mode": "{label_ch1_room_mode}",
+              "ch1_room_comfort_temp": "{label_ch1_room_comfort_temp}",
+              "ch1_room_eco_temp": "{label_ch1_room_eco_temp}",
+              "ch1_room_hysteresis": "{label_ch1_room_hysteresis}",
+              "ch1_weather_correction": "{label_ch1_weather_correction}",
+              "ch1_weather_stop_temp": "{label_ch1_weather_stop_temp}",
+              "weather_correction": "{label_weather_correction}",
+              "weather_stop_temp_ch1": "{label_weather_stop_temp_ch1}",
+              "ch1_return_protection": "{label_ch1_return_protection}",
+              "ch1_return_temp_min": "{label_ch1_return_temp_min}"
+            },
+            "data_description": {
+              "ch1_mode": "{value_ch1_mode}",
+              "ch1_mixer": "{value_ch1_mixer}",
+              "ch1_mixer_opening_min": "{value_ch1_mixer_opening_min}",
+              "ch1_mixer_opening_max": "{value_ch1_mixer_opening_max}",
+              "ch1_mixer_gain": "{value_ch1_mixer_gain}",
+              "ch1_mixer_stabilization_time": "{value_ch1_mixer_stabilization_time}",
+              "ch1_mixer_temp_setpoint": "{value_ch1_mixer_temp_setpoint}",
+              "ch1_mixer_temp_min": "{value_ch1_mixer_temp_min}",
+              "ch1_mixer_temp_max": "{value_ch1_mixer_temp_max}",
+              "ch1_mixer_temp_reduction": "{value_ch1_mixer_temp_reduction}",
+              "ch1_room_mode": "{value_ch1_room_mode}",
+              "ch1_room_comfort_temp": "{value_ch1_room_comfort_temp}",
+              "ch1_room_eco_temp": "{value_ch1_room_eco_temp}",
+              "ch1_room_hysteresis": "{value_ch1_room_hysteresis}",
+              "ch1_weather_correction": "{value_ch1_weather_correction}",
+              "ch1_weather_stop_temp": "{value_ch1_weather_stop_temp}",
+              "weather_correction": "{value_weather_correction}",
+              "weather_stop_temp_ch1": "{value_weather_stop_temp_ch1}",
+              "ch1_return_protection": "{value_ch1_return_protection}",
+              "ch1_return_temp_min": "{value_ch1_return_temp_min}"
+            }
+          },
+          "ch2": {
+            "name": "{group_ch2}",
+            "data": {
+              "ch2_mode": "{label_ch2_mode}",
+              "ch2_mixer": "{label_ch2_mixer}",
+              "ch2_mixer_opening_min": "{label_ch2_mixer_opening_min}",
+              "ch2_mixer_opening_max": "{label_ch2_mixer_opening_max}",
+              "ch2_mixer_gain": "{label_ch2_mixer_gain}",
+              "ch2_mixer_stabilization_time": "{label_ch2_mixer_stabilization_time}",
+              "ch2_mixer_temp_setpoint": "{label_ch2_mixer_temp_setpoint}",
+              "ch2_mixer_temp_min": "{label_ch2_mixer_temp_min}",
+              "ch2_mixer_temp_max": "{label_ch2_mixer_temp_max}",
+              "ch2_mixer_temp_reduction": "{label_ch2_mixer_temp_reduction}",
+              "ch2_room_mode": "{label_ch2_room_mode}",
+              "ch2_room_comfort_temp": "{label_ch2_room_comfort_temp}",
+              "ch2_room_eco_temp": "{label_ch2_room_eco_temp}",
+              "ch2_room_hysteresis": "{label_ch2_room_hysteresis}",
+              "ch2_weather_correction": "{label_ch2_weather_correction}",
+              "ch2_weather_stop_temp": "{label_ch2_weather_stop_temp}",
+              "weather_stop_temp_ch2": "{label_weather_stop_temp_ch2}"
+            },
+            "data_description": {
+              "ch2_mode": "{value_ch2_mode}",
+              "ch2_mixer": "{value_ch2_mixer}",
+              "ch2_mixer_opening_min": "{value_ch2_mixer_opening_min}",
+              "ch2_mixer_opening_max": "{value_ch2_mixer_opening_max}",
+              "ch2_mixer_gain": "{value_ch2_mixer_gain}",
+              "ch2_mixer_stabilization_time": "{value_ch2_mixer_stabilization_time}",
+              "ch2_mixer_temp_setpoint": "{value_ch2_mixer_temp_setpoint}",
+              "ch2_mixer_temp_min": "{value_ch2_mixer_temp_min}",
+              "ch2_mixer_temp_max": "{value_ch2_mixer_temp_max}",
+              "ch2_mixer_temp_reduction": "{value_ch2_mixer_temp_reduction}",
+              "ch2_room_mode": "{value_ch2_room_mode}",
+              "ch2_room_comfort_temp": "{value_ch2_room_comfort_temp}",
+              "ch2_room_eco_temp": "{value_ch2_room_eco_temp}",
+              "ch2_room_hysteresis": "{value_ch2_room_hysteresis}",
+              "ch2_weather_correction": "{value_ch2_weather_correction}",
+              "ch2_weather_stop_temp": "{value_ch2_weather_stop_temp}",
+              "weather_stop_temp_ch2": "{value_weather_stop_temp_ch2}"
+            }
+          },
+          "ch3": {
+            "name": "{group_ch3}",
+            "data": {
+              "ch3_mode": "{label_ch3_mode}",
+              "ch3_mixer": "{label_ch3_mixer}",
+              "ch3_mixer_opening_min": "{label_ch3_mixer_opening_min}",
+              "ch3_mixer_opening_max": "{label_ch3_mixer_opening_max}",
+              "ch3_mixer_gain": "{label_ch3_mixer_gain}",
+              "ch3_mixer_stabilization_time": "{label_ch3_mixer_stabilization_time}",
+              "ch3_mixer_temp_setpoint": "{label_ch3_mixer_temp_setpoint}",
+              "ch3_mixer_temp_min": "{label_ch3_mixer_temp_min}",
+              "ch3_mixer_temp_max": "{label_ch3_mixer_temp_max}",
+              "ch3_mixer_temp_reduction": "{label_ch3_mixer_temp_reduction}",
+              "ch3_room_mode": "{label_ch3_room_mode}",
+              "ch3_room_comfort_temp": "{label_ch3_room_comfort_temp}",
+              "ch3_room_eco_temp": "{label_ch3_room_eco_temp}",
+              "ch3_room_hysteresis": "{label_ch3_room_hysteresis}",
+              "ch3_weather_correction": "{label_ch3_weather_correction}",
+              "ch3_weather_stop_temp": "{label_ch3_weather_stop_temp}"
+            },
+            "data_description": {
+              "ch3_mode": "{value_ch3_mode}",
+              "ch3_mixer": "{value_ch3_mixer}",
+              "ch3_mixer_opening_min": "{value_ch3_mixer_opening_min}",
+              "ch3_mixer_opening_max": "{value_ch3_mixer_opening_max}",
+              "ch3_mixer_gain": "{value_ch3_mixer_gain}",
+              "ch3_mixer_stabilization_time": "{value_ch3_mixer_stabilization_time}",
+              "ch3_mixer_temp_setpoint": "{value_ch3_mixer_temp_setpoint}",
+              "ch3_mixer_temp_min": "{value_ch3_mixer_temp_min}",
+              "ch3_mixer_temp_max": "{value_ch3_mixer_temp_max}",
+              "ch3_mixer_temp_reduction": "{value_ch3_mixer_temp_reduction}",
+              "ch3_room_mode": "{value_ch3_room_mode}",
+              "ch3_room_comfort_temp": "{value_ch3_room_comfort_temp}",
+              "ch3_room_eco_temp": "{value_ch3_room_eco_temp}",
+              "ch3_room_hysteresis": "{value_ch3_room_hysteresis}",
+              "ch3_weather_correction": "{value_ch3_weather_correction}",
+              "ch3_weather_stop_temp": "{value_ch3_weather_stop_temp}"
             }
           }
         }
       },
-      "ch3": {
-        "title": "CH3 circuit",
-        "description": "Select CH3 circuit readings, states and settings.",
+      "profile_confirm": {
+        "title": "Confirm sending settings",
+        "description": "{changes}",
+        "menu_options": {
+          "profile_send": "Send to controller",
+          "profile_preview": "Edit settings selection",
+          "profile_menu": "Cancel"
+        }
+      },
+      "profile_temperature_limit": {
+        "title": "Temperature limit exceeded",
+        "description": "The boiler setpoint {value} exceeds the integration limit of {limit}.\n\nApproval applies only to this profile transmission.",
+        "menu_options": {
+          "profile_preview": "Return to settings selection",
+          "profile_send_override": "Send anyway"
+        }
+      },
+      "profile_apply": {
+        "title": "Sending settings"
+      },
+      "profile_result": {
+        "title": "Settings sending result",
+        "description": "{summary}"
+      },
+      "profile_download": {
+        "title": "Download profile",
+        "description": "{download_link}\n\nThe link is valid for 10 minutes or until the form is closed."
+      },
+      "profile_delete": {
+        "title": "Delete profile",
+        "description": "Delete profile “{name}”?",
+        "menu_options": {
+          "profile_delete_confirm": "Delete profile",
+          "profile_menu": "Cancel"
+        }
+      },
+      "profile_unchanged": {
+        "title": "No changes",
+        "description": "The profile settings match the current controller settings.{skipped}"
+      },
+      "profile_import_review": {
+        "title": "Save imported profile",
+        "description": "Review the settings and save the profile.\n\n{settings}{skipped}",
+        "data": {
+          "name": "Profile name",
+          "description": "Description"
+        }
+      },
+      "profile_manage": {
+        "title": "Manage profiles",
+        "menu_option_descriptions": {
+          "profile_pick_0": "{profile_description_0}",
+          "profile_pick_1": "{profile_description_1}",
+          "profile_pick_2": "{profile_description_2}",
+          "profile_pick_3": "{profile_description_3}",
+          "profile_pick_4": "{profile_description_4}",
+          "profile_pick_5": "{profile_description_5}",
+          "profile_pick_6": "{profile_description_6}",
+          "profile_pick_7": "{profile_description_7}",
+          "profile_pick_8": "{profile_description_8}",
+          "profile_pick_9": "{profile_description_9}",
+          "profile_pick_10": "{profile_description_10}",
+          "profile_pick_11": "{profile_description_11}",
+          "profile_pick_12": "{profile_description_12}",
+          "profile_pick_13": "{profile_description_13}",
+          "profile_pick_14": "{profile_description_14}",
+          "profile_pick_15": "{profile_description_15}",
+          "profile_pick_16": "{profile_description_16}",
+          "profile_pick_17": "{profile_description_17}",
+          "profile_pick_18": "{profile_description_18}",
+          "profile_pick_19": "{profile_description_19}"
+        }
+      },
+      "profile_menu": {
+        "title": "Manage profile",
+        "description": "### {name}{description}{updated}",
+        "menu_options": {
+          "profile_load": "Load into controller",
+          "profile_rename": "Change name and description",
+          "profile_edit_settings": "Edit settings",
+          "profile_remove_settings": "Remove settings from profile",
+          "profile_export": "Download profile",
+          "profile_delete": "Delete profile",
+          "profile_manage": "← Back"
+        }
+      },
+      "profile_rename": {
+        "title": "Change name and description",
+        "data": {
+          "name": "Profile name",
+          "description": "Description"
+        }
+      },
+      "profile_delete_error": {
+        "title": "Could not delete profile"
+      },
+      "profile_file": {
+        "title": "Import profile",
+        "description": "Choose a file containing controller settings.",
+        "data": {
+          "file": "JSON file"
+        }
+      },
+      "profile_name": {
+        "title": "Create a new profile",
+        "description": "Create a profile from the current controller settings.{skipped}",
+        "data": {
+          "name": "Profile name",
+          "description": "Description"
+        }
+      },
+      "profile_update_pick": {
+        "title": "Select a profile to update",
+        "menu_option_descriptions": {
+          "profile_pick_0": "{profile_description_0}",
+          "profile_pick_1": "{profile_description_1}",
+          "profile_pick_2": "{profile_description_2}",
+          "profile_pick_3": "{profile_description_3}",
+          "profile_pick_4": "{profile_description_4}",
+          "profile_pick_5": "{profile_description_5}",
+          "profile_pick_6": "{profile_description_6}",
+          "profile_pick_7": "{profile_description_7}",
+          "profile_pick_8": "{profile_description_8}",
+          "profile_pick_9": "{profile_description_9}",
+          "profile_pick_10": "{profile_description_10}",
+          "profile_pick_11": "{profile_description_11}",
+          "profile_pick_12": "{profile_description_12}",
+          "profile_pick_13": "{profile_description_13}",
+          "profile_pick_14": "{profile_description_14}",
+          "profile_pick_15": "{profile_description_15}",
+          "profile_pick_16": "{profile_description_16}",
+          "profile_pick_17": "{profile_description_17}",
+          "profile_pick_18": "{profile_description_18}",
+          "profile_pick_19": "{profile_description_19}"
+        }
+      },
+      "profile_remove_settings": {
+        "title": "Remove settings from profile",
+        "description": "Profile: {name}\n\nSelect settings to remove from the profile.{skipped}",
         "sections": {
-          "sensors": {
-            "name": "Sensors and states",
+          "boiler_burner": {
+            "name": "{group_boiler_burner}",
             "data": {
-              "circuit": "Circuit",
-              "mixer": "Mixer",
-              "room": "Room regulator"
+              "settings": "Settings"
             }
           },
-          "configuration": {
-            "name": "Configuration",
+          "dhw_buffer": {
+            "name": "{group_dhw_buffer}",
             "data": {
-              "work_mode": "Circuit",
-              "mixer": "Mixer",
-              "temperatures": "Temperatures",
-              "room": "Room regulator",
-              "weather": "Weather regulator"
+              "settings": "Settings"
+            }
+          },
+          "ch1": {
+            "name": "{group_ch1}",
+            "data": {
+              "settings": "Settings"
+            }
+          },
+          "ch2": {
+            "name": "{group_ch2}",
+            "data": {
+              "settings": "Settings"
+            }
+          },
+          "ch3": {
+            "name": "{group_ch3}",
+            "data": {
+              "settings": "Settings"
             }
           }
         }
+      },
+      "profile_remove_confirm": {
+        "title": "Confirm removal of profile settings",
+        "description": "{changes}",
+        "menu_options": {
+          "profile_write_commit": "Remove settings from profile",
+          "profile_write_back": "Revise settings selection",
+          "profile_write_cancel": "Cancel"
+        }
+      },
+      "profile_create_confirm": {
+        "title": "Confirm profile save",
+        "description": "{changes}",
+        "menu_options": {
+          "profile_write_commit": "Save profile",
+          "profile_write_back": "Edit settings selection",
+          "profile_write_cancel": "Cancel"
+        }
+      },
+      "profile_update_confirm": {
+        "title": "Confirm profile update",
+        "description": "{changes}",
+        "menu_options": {
+          "profile_write_commit": "Update profile",
+          "profile_write_back": "Edit settings selection",
+          "profile_write_cancel": "Cancel"
+        }
+      },
+      "profile_duplicate": {
+        "title": "Duplicate profile name",
+        "description": "A profile named “{name}” already exists. Save anyway?",
+        "menu_options": {
+          "profile_duplicate_continue": "Save anyway",
+          "profile_duplicate_edit": "Change name",
+          "profiles": "Cancel"
+        }
+      },
+      "profile_write_unchanged": {
+        "title": "No changes",
+        "description": "{message}{skipped}"
+      },
+      "profile_save_error": {
+        "title": "Could not read settings"
+      },
+      "profile_write_error": {
+        "title": "Could not save profile"
       }
+    },
+    "error": {
+      "profile_offline": "No current connection to the controller.",
+      "profile_model_mismatch": "The profile belongs to a different controller model.",
+      "profile_invalid_pair": "The minimum value cannot exceed the maximum. Select the paired setting as well or correct the profile.",
+      "profile_changed": "The data has changed. Review the settings and selection again.",
+      "profile_no_selection": "Select at least one change.",
+      "profile_busy": "Another command or profile is being sent. Try again when it finishes.",
+      "profile_not_confirmed": "The controller did not confirm the change. Import stopped; earlier writes remain applied.",
+      "profile_send_failed": "Sending was interrupted. Check the controller settings before importing again.",
+      "profile_cancelled": "Import cancelled. Previously sent settings may already have been applied.",
+      "invalid_profile": "Invalid or unsupported profile. A SKZP Control or Timel JSON file is required (max. 64 KiB).",
+      "profile_empty": "No valid settings supported by this controller.",
+      "profile_count_limit": "20 profiles are already saved. Delete one before adding another.",
+      "profile_invalid_name": "Enter a name between 1 and 80 characters.",
+      "profile_storage_error": "Could not read or save the profile file.",
+      "profile_required": "Select a profile or go back to the menu.",
+      "profile_file_required": "Select a JSON file or go back to the menu.",
+      "profile_invalid_description": "The description can contain up to 1000 characters.",
+      "invalid_value": "Enter a valid value or select an available mode.",
+      "out_of_range": "The value is outside the allowed range.",
+      "profile_comparison_unavailable": "Cannot compare settings. Valid, current controller data is unavailable.",
+      "profile_no_removal": "Select at least one setting to remove.",
+      "profile_boiler_limit": "The boiler setpoint exceeds the integration limit."
+    },
+    "progress": {
+      "profile_apply": "Sending settings to the controller…\n\nDo not close the window while settings are being sent."
     }
   },
   "exceptions": {
@@ -466,7 +883,7 @@
       "message": "Cannot send the command. There is no connection or no current data from the controller."
     },
     "missing_command_credentials": {
-      "message": "Cannot send the command because the controller's data frame is missing: {fields}."
+      "message": "Required command data is missing: {fields}."
     },
     "command_send_failed": {
       "message": "Could not send the command to the SKZP controller: {error}."
@@ -475,13 +892,16 @@
       "message": "The controller did not confirm changing {parameter} to {value} after all attempts. The last known value has been restored in Home Assistant."
     },
     "initial_data_timeout": {
-      "message": "No complete data frame received from controller {host}:{port} within {seconds} s. Home Assistant will retry setup automatically."
+      "message": "No valid data received from controller {host}:{port} within {seconds} s. Another attempt will be made automatically."
     },
     "unsupported_model": {
       "message": "Unsupported controller model: {model}."
     },
     "command_send_timeout": {
       "message": "Timed out while sending the command to the controller."
+    },
+    "profile_busy": {
+      "message": "Another command or profile is being sent. Try again when it finishes."
     }
   },
   "entity": {
@@ -591,134 +1011,50 @@
       "buffer_hysteresis": {
         "name": "Buffer Hysteresis"
       },
-      "ch1_mixer_opening_min": {
-        "name": "CH1 Mixer Min. opening"
+      "ch_mixer_opening_min": {
+        "name": "CH{number} Mixer Min. opening"
       },
-      "ch1_mixer_opening_max": {
-        "name": "CH1 Mixer Max. opening"
+      "ch_mixer_opening_max": {
+        "name": "CH{number} Mixer Max. opening"
       },
-      "ch1_mixer_gain": {
-        "name": "CH1 Mixer Gain"
+      "ch_mixer_gain": {
+        "name": "CH{number} Mixer Gain"
       },
-      "ch1_mixer_stabilization_time": {
-        "name": "CH1 Mixer Stabilization time"
+      "ch_mixer_stabilization_time": {
+        "name": "CH{number} Mixer Stabilization time"
       },
-      "ch1_mixer_temp_setpoint": {
-        "name": "CH1 Mixer Set temp."
+      "ch_mixer_temp_setpoint": {
+        "name": "CH{number} Mixer Set temp."
       },
-      "ch1_return_temp_min": {
-        "name": "CH1 Return Min. temp."
+      "ch_return_temp_min": {
+        "name": "CH{number} Return Min. temp."
       },
-      "ch1_mixer_temp_min": {
-        "name": "CH1 Mixer Min. temp."
+      "ch_mixer_temp_min": {
+        "name": "CH{number} Mixer Min. temp."
       },
-      "ch1_mixer_temp_max": {
-        "name": "CH1 Mixer Max. temp."
+      "ch_mixer_temp_max": {
+        "name": "CH{number} Mixer Max. temp."
       },
-      "ch1_mixer_temp_reduction": {
-        "name": "CH1 Mixer Temp. reduction"
+      "ch_mixer_temp_reduction": {
+        "name": "CH{number} Mixer Temp. reduction"
       },
-      "ch1_room_comfort_temp": {
-        "name": "CH1 Room reg. Comfort temp."
+      "ch_room_comfort_temp": {
+        "name": "CH{number} Room reg. Comfort temp."
       },
-      "ch1_room_eco_temp": {
-        "name": "CH1 Room reg. Economy temp."
+      "ch_room_eco_temp": {
+        "name": "CH{number} Room reg. Economy temp."
       },
-      "ch1_room_hysteresis": {
-        "name": "CH1 Room reg. Hysteresis"
+      "ch_room_hysteresis": {
+        "name": "CH{number} Room reg. Hysteresis"
       },
-      "ch1_weather_correction": {
-        "name": "CH1 Weather reg. Correction"
+      "ch_weather_correction": {
+        "name": "CH{number} Weather reg. Correction"
       },
-      "ch1_weather_stop_temp": {
-        "name": "CH1 Weather reg. Circuit shutdown temp."
-      },
-      "ch2_mixer_opening_min": {
-        "name": "CH2 Mixer Min. opening"
-      },
-      "ch2_mixer_opening_max": {
-        "name": "CH2 Mixer Max. opening"
-      },
-      "ch2_mixer_gain": {
-        "name": "CH2 Mixer Gain"
-      },
-      "ch2_mixer_stabilization_time": {
-        "name": "CH2 Mixer Stabilization time"
-      },
-      "ch2_mixer_temp_setpoint": {
-        "name": "CH2 Mixer Set temp."
-      },
-      "ch2_mixer_temp_min": {
-        "name": "CH2 Mixer Min. temp."
-      },
-      "ch2_mixer_temp_max": {
-        "name": "CH2 Mixer Max. temp."
-      },
-      "ch2_mixer_temp_reduction": {
-        "name": "CH2 Mixer Temp. reduction"
-      },
-      "ch2_room_comfort_temp": {
-        "name": "CH2 Room reg. Comfort temp."
-      },
-      "ch2_room_eco_temp": {
-        "name": "CH2 Room reg. Economy temp."
-      },
-      "ch2_room_hysteresis": {
-        "name": "CH2 Room reg. Hysteresis"
-      },
-      "ch2_weather_correction": {
-        "name": "CH2 Weather reg. Correction"
-      },
-      "ch2_weather_stop_temp": {
-        "name": "CH2 Weather reg. Circuit shutdown temp."
-      },
-      "ch3_mixer_opening_min": {
-        "name": "CH3 Mixer Min. opening"
-      },
-      "ch3_mixer_opening_max": {
-        "name": "CH3 Mixer Max. opening"
-      },
-      "ch3_mixer_gain": {
-        "name": "CH3 Mixer Gain"
-      },
-      "ch3_mixer_stabilization_time": {
-        "name": "CH3 Mixer Stabilization time"
-      },
-      "ch3_mixer_temp_setpoint": {
-        "name": "CH3 Mixer Set temp."
-      },
-      "ch3_mixer_temp_min": {
-        "name": "CH3 Mixer Min. temp."
-      },
-      "ch3_mixer_temp_max": {
-        "name": "CH3 Mixer Max. temp."
-      },
-      "ch3_mixer_temp_reduction": {
-        "name": "CH3 Mixer Temp. reduction"
-      },
-      "ch3_room_comfort_temp": {
-        "name": "CH3 Room reg. Comfort temp."
-      },
-      "ch3_room_eco_temp": {
-        "name": "CH3 Room reg. Economy temp."
-      },
-      "ch3_room_hysteresis": {
-        "name": "CH3 Room reg. Hysteresis"
-      },
-      "ch3_weather_correction": {
-        "name": "CH3 Weather reg. Correction"
-      },
-      "ch3_weather_stop_temp": {
-        "name": "CH3 Weather reg. Circuit shutdown temp."
+      "ch_weather_stop_temp": {
+        "name": "CH{number} Weather reg. Circuit shutdown temp."
       },
       "weather_correction": {
         "name": "Weather reg. Correction"
-      },
-      "weather_stop_temp_ch1": {
-        "name": "CH1 Weather reg. Circuit shutdown temp."
-      },
-      "weather_stop_temp_ch2": {
-        "name": "CH2 Weather reg. Circuit shutdown temp."
       }
     },
     "switch": {
@@ -731,17 +1067,11 @@
       "dhwc_always_on": {
         "name": "DHW Circ. Always on"
       },
-      "ch1_return_protection": {
-        "name": "CH1 Return Protection"
+      "ch_return_protection": {
+        "name": "CH{number} Return Protection"
       },
-      "ch1_mixer": {
-        "name": "CH1 Mixer"
-      },
-      "ch2_mixer": {
-        "name": "CH2 Mixer"
-      },
-      "ch3_mixer": {
-        "name": "CH3 Mixer"
+      "ch_mixer": {
+        "name": "CH{number} Mixer"
       },
       "device_power": {
         "name": "Controller"
@@ -779,50 +1109,16 @@
           "timer": "Time program"
         }
       },
-      "ch1_mode": {
-        "name": "CH1 Mode",
+      "ch_mode": {
+        "name": "CH{number} Mode",
         "state": {
           "off": "Off",
           "active": "Active",
           "timer": "Time program"
         }
       },
-      "ch1_room_mode": {
-        "name": "CH1 Room reg. Mode",
-        "state": {
-          "off": "Off",
-          "economy": "Economy temp.",
-          "comfort": "Comfort temp.",
-          "timer": "Time program"
-        }
-      },
-      "ch2_mode": {
-        "name": "CH2 Mode",
-        "state": {
-          "off": "Off",
-          "active": "Active",
-          "timer": "Time program"
-        }
-      },
-      "ch2_room_mode": {
-        "name": "CH2 Room reg. Mode",
-        "state": {
-          "off": "Off",
-          "economy": "Economy temp.",
-          "comfort": "Comfort temp.",
-          "timer": "Time program"
-        }
-      },
-      "ch3_mode": {
-        "name": "CH3 Mode",
-        "state": {
-          "off": "Off",
-          "active": "Active",
-          "timer": "Time program"
-        }
-      },
-      "ch3_room_mode": {
-        "name": "CH3 Room reg. Mode",
+      "ch_room_mode": {
+        "name": "CH{number} Room reg. Mode",
         "state": {
           "off": "Off",
           "economy": "Economy temp.",
@@ -851,7 +1147,7 @@
           }
         }
       },
-      "alarmslist": {
+      "active_alarms": {
         "name": "Active alarms",
         "state_attributes": {
           "aktywne_alarmy": {
@@ -859,7 +1155,7 @@
           }
         }
       },
-      "devstatus_mode": {
+      "controller_status": {
         "name": "Status",
         "state": {
           "standby": "Standby",
@@ -884,138 +1180,102 @@
       "uptime": {
         "name": "Uptime"
       },
-      "boilertempact": {
+      "boiler_temp_current": {
         "name": "Boiler Current temp."
       },
-      "ch1returntempact": {
+      "boiler_return_temp": {
         "name": "Boiler Return temp."
       },
-      "butempact": {
+      "burner_temp": {
         "name": "Burner Temp."
       },
-      "exhausttempact": {
+      "exhaust_temp": {
         "name": "Boiler Flue gas temp."
       },
-      "an01": {
+      "oxygen": {
         "name": "Analyzer Oxygen"
       },
-      "buphotoact": {
+      "flame_sensor": {
         "name": "Burner Flame sensor"
       },
-      "k003": {
+      "boiler_reduced_setpoint": {
         "name": "Boiler Reduced set temp."
       },
-      "devstatus_power": {
+      "boiler_power_current": {
         "name": "Boiler Power"
       },
-      "devstatus_fan": {
+      "fan_power": {
         "name": "Fan Power"
       },
-      "b060": {
+      "fuel_capacity": {
         "name": "Fuel Hopper capacity"
       },
-      "b062": {
+      "fuel_remaining": {
         "name": "Fuel Remaining"
       },
-      "butotalfuel": {
+      "fuel_consumption_total": {
         "name": "Total consumption"
       },
-      "bu24hfuel": {
+      "fuel_consumption_daily": {
         "name": "Daily consumption"
       },
-      "buactualfuel": {
+      "fuel_consumption_rate": {
         "name": "Current consumption"
       },
-      "bufuelcaloric": {
+      "fuel_caloric": {
         "name": "Fuel Calorific value"
       },
-      "dhwtempact": {
+      "dhw_temp_current": {
         "name": "DHW Current temp."
       },
-      "weatempact": {
+      "outdoor_temp": {
         "name": "Outdoor temp."
       },
-      "d201": {
+      "buffer_temp_top": {
         "name": "Buffer Top temp."
       },
-      "d202": {
+      "buffer_temp_bottom": {
         "name": "Buffer Bottom temp."
       },
-      "d203": {
+      "buffer_temp_setpoint": {
         "name": "Buffer Set temp."
       },
-      "d204": {
+      "buffer_hysteresis": {
         "name": "Buffer Hysteresis"
       },
-      "ch1_mixer_supply_temp": {
-        "name": "CH1 Mixer Supply temp."
+      "ch_mixer_supply_temp": {
+        "name": "CH{number} Mixer Supply temp."
       },
-      "c007": {
-        "name": "CH1 Mixer Target temp."
+      "ch_mixer_target_temp": {
+        "name": "CH{number} Mixer Target temp."
       },
-      "ch1_mixer_opening": {
-        "name": "CH1 Mixer Opening"
+      "ch_mixer_opening": {
+        "name": "CH{number} Mixer Opening"
       },
-      "ch1_room_temp": {
-        "name": "CH1 Room reg. Room temp."
+      "ch_room_temp": {
+        "name": "CH{number} Room reg. Room temp."
       },
-      "ch1_room_target_temp": {
-        "name": "CH1 Room reg. Target temp."
-      },
-      "c106": {
-        "name": "CH2 Mixer Supply temp."
-      },
-      "c107": {
-        "name": "CH2 Mixer Target temp."
-      },
-      "c101": {
-        "name": "CH2 Mixer Opening"
-      },
-      "c108": {
-        "name": "CH2 Room reg. Room temp."
-      },
-      "c109": {
-        "name": "CH2 Room reg. Target temp."
-      },
-      "c206": {
-        "name": "CH3 Mixer Supply temp."
-      },
-      "c207": {
-        "name": "CH3 Mixer Target temp."
-      },
-      "c201": {
-        "name": "CH3 Mixer Opening"
-      },
-      "c208": {
-        "name": "CH3 Room reg. Room temp."
-      },
-      "c209": {
-        "name": "CH3 Room reg. Target temp."
+      "ch_room_target_temp": {
+        "name": "CH{number} Room reg. Target temp."
       }
     },
     "binary_sensor": {
-      "devstatus_outfeeder": {
+      "feeder": {
         "name": "Feeder"
       },
-      "devstatus_outch1": {
-        "name": "CH1 Pump"
+      "ch_pump": {
+        "name": "CH{number} Pump"
       },
-      "devstatus_outch2": {
-        "name": "CH2 Pump"
-      },
-      "devstatus_outdhw": {
+      "dhw_pump": {
         "name": "DHW Pump"
       },
-      "devstatus_outcirc": {
+      "dhwc_pump": {
         "name": "DHW Circ. Pump"
       },
-      "devstatus_outch3": {
-        "name": "CH3 Pump"
-      },
-      "devstatus_outbuffer": {
+      "buffer_pump": {
         "name": "Buffer Pump"
       },
-      "devstatus_outheater": {
+      "heater": {
         "name": "Heater"
       }
     }
@@ -1023,156 +1283,87 @@
   "selector": {
     "entity_selection": {
       "options": {
-        "number_fuel_caloric": "Calorific value",
-        "number_boiler_temp_setpoint": "Set temp.",
-        "number_boiler_hysteresis": "Hysteresis",
-        "number_boiler_temp_reduction": "Temp. reduction",
-        "number_no_fire_time": "Extinguishing time",
-        "number_clean_period": "Cleaning interval",
-        "number_clean_time": "Cleaning time",
-        "number_modulation_min": "Min. boiler power",
-        "number_modulation_max": "Max. boiler power",
-        "number_modulation_dynamics": "Dynamics",
-        "number_overtemp_time": "Overtemp. time",
-        "number_fuel_correction": "Dose correction",
-        "number_exhaust_temp_max": "Max. flue gas temp.",
-        "number_standby_feed_time": "Feed time",
-        "number_standby_period": "Pause time",
-        "number_standby_air": "Air",
-        "number_standby_air_time": "Blow time",
-        "number_standby_exit_time": "Standby exit",
-        "number_air_min": "Min. (10% power)",
-        "number_air_max": "Max. (100% power)",
-        "number_feed_air_boost": "Extra air when feeding",
-        "number_interval_feed_time": "Feed time",
-        "number_interval_break_time": "Pause time",
-        "number_interval_air": "Air",
-        "number_feeder_efficiency": "Capacity",
-        "number_max_feed_time": "Max. feed time",
-        "number_boiler_power": "Rated power (kW)",
-        "number_dhw_temp_setpoint": "Set temp.",
-        "number_dhw_hysteresis": "Hysteresis",
-        "number_dhw_overshoot": "Boiler temp. boost",
-        "number_dhwc_temp_on": "Activation temp.",
-        "number_dhwc_work_time": "Run time",
-        "number_dhwc_break_time": "Pause time",
-        "number_buffer_temp_setpoint": "Set temp.",
-        "number_buffer_hysteresis": "Hysteresis",
-        "number_ch1_mixer_opening_min": "Min. opening",
-        "number_ch1_mixer_opening_max": "Max. opening",
-        "number_ch1_mixer_gain": "Gain",
-        "number_ch1_mixer_stabilization_time": "Stabilization time",
-        "number_ch1_mixer_temp_setpoint": "Setpoint",
-        "number_ch1_mixer_temp_min": "Minimum",
-        "number_ch1_mixer_temp_max": "Maximum",
-        "number_ch1_mixer_temp_reduction": "Reduction",
-        "number_ch1_room_comfort_temp": "Comfort temp.",
-        "number_ch1_room_eco_temp": "Economy temp.",
-        "number_ch1_room_hysteresis": "Hysteresis",
-        "number_ch1_weather_correction": "Correction",
-        "number_ch1_weather_stop_temp": "Circuit shutdown temp.",
-        "number_ch2_mixer_opening_min": "Min. opening",
-        "number_ch2_mixer_opening_max": "Max. opening",
-        "number_ch2_mixer_gain": "Gain",
-        "number_ch2_mixer_stabilization_time": "Stabilization time",
-        "number_ch2_mixer_temp_setpoint": "Setpoint",
-        "number_ch2_mixer_temp_min": "Minimum",
-        "number_ch2_mixer_temp_max": "Maximum",
-        "number_ch2_mixer_temp_reduction": "Reduction",
-        "number_ch2_room_comfort_temp": "Comfort temp.",
-        "number_ch2_room_eco_temp": "Economy temp.",
-        "number_ch2_room_hysteresis": "Hysteresis",
-        "number_ch2_weather_correction": "Correction",
-        "number_ch2_weather_stop_temp": "Circuit shutdown temp.",
-        "number_ch3_mixer_opening_min": "Min. opening",
-        "number_ch3_mixer_opening_max": "Max. opening",
-        "number_ch3_mixer_gain": "Gain",
-        "number_ch3_mixer_stabilization_time": "Stabilization time",
-        "number_ch3_mixer_temp_setpoint": "Setpoint",
-        "number_ch3_mixer_temp_min": "Minimum",
-        "number_ch3_mixer_temp_max": "Maximum",
-        "number_ch3_mixer_temp_reduction": "Reduction",
-        "number_ch3_room_comfort_temp": "Comfort temp.",
-        "number_ch3_room_eco_temp": "Economy temp.",
-        "number_ch3_room_hysteresis": "Hysteresis",
-        "number_ch3_weather_correction": "Correction",
-        "number_ch3_weather_stop_temp": "Circuit shutdown temp.",
-        "number_weather_correction": "Correction",
-        "number_weather_stop_temp_ch1": "Circuit shutdown temp.",
-        "number_weather_stop_temp_ch2": "Circuit shutdown temp.",
-        "switch_buffer": "On/off",
-        "switch_dhw_priority": "Priority on/off",
-        "switch_dhwc_always_on": "Always on",
-        "number_ch1_return_temp_min": "Min. temp.",
-        "switch_ch1_return_protection": "On/off",
-        "switch_ch1_mixer": "On/off",
-        "switch_ch2_mixer": "On/off",
-        "switch_ch3_mixer": "On/off",
-        "select_burner_mode": "Mode",
-        "select_dhw_mode": "Mode",
-        "select_dhwc_mode": "Mode",
-        "select_boiler_mode": "Mode",
-        "select_ch1_mode": "Mode",
-        "select_ch1_room_mode": "Mode",
-        "select_ch2_mode": "Mode",
-        "select_ch2_room_mode": "Mode",
-        "select_ch3_mode": "Mode",
-        "select_ch3_room_mode": "Mode",
-        "sensor_boilertempact": "Current boiler temp.",
-        "sensor_ch1returntempact": "Return temp.",
-        "sensor_butempact": "Burner temp.",
-        "sensor_exhausttempact": "Flue gas temp.",
-        "sensor_an01": "Oxygen",
-        "sensor_buphotoact": "Flame sensor",
-        "sensor_k003": "Reduced set temp.",
-        "sensor_devstatus_power": "Boiler power",
-        "sensor_devstatus_fan": "Fan power",
-        "sensor_b060": "Hopper capacity",
-        "sensor_b062": "Remaining",
-        "sensor_butotalfuel": "Total consumption",
-        "sensor_bu24hfuel": "Daily consumption",
-        "sensor_buactualfuel": "Current consumption",
-        "sensor_bufuelcaloric": "Calorific value",
-        "sensor_dhwtempact": "Current temp.",
-        "sensor_weatempact": "Outdoor temp.",
-        "sensor_d201": "Top temp.",
-        "sensor_d202": "Bottom temp.",
-        "sensor_d203": "Set temp.",
-        "sensor_d204": "Hysteresis",
-        "sensor_ch1_mixer_supply_temp": "Supply temp.",
-        "sensor_c007": "Target temp.",
-        "sensor_ch1_mixer_opening": "Opening",
-        "sensor_ch1_room_temp": "Room temp.",
-        "sensor_ch1_room_target_temp": "Target temp.",
-        "sensor_c106": "Supply temp.",
-        "sensor_c107": "Target temp.",
-        "sensor_c101": "Opening",
-        "sensor_c108": "Room temp.",
-        "sensor_c109": "Target temp.",
-        "sensor_c206": "Supply temp.",
-        "sensor_c207": "Target temp.",
-        "sensor_c201": "Opening",
-        "sensor_c208": "Room temp.",
-        "sensor_c209": "Target temp.",
-        "binary_sensor_devstatus_outfeeder": "Feeder on/off",
-        "binary_sensor_devstatus_outch1": "Pump on/off",
-        "binary_sensor_devstatus_outch2": "Pump on/off",
-        "binary_sensor_devstatus_outdhw": "Pump on/off",
-        "binary_sensor_devstatus_outcirc": "Pump on/off",
-        "binary_sensor_devstatus_outch3": "Pump on/off",
-        "binary_sensor_devstatus_outbuffer": "Pump on/off",
-        "binary_sensor_devstatus_outheater": "Heater on/off"
+        "fuel_caloric": "Calorific value",
+        "temp_setpoint": "Set temp.",
+        "hysteresis": "Hysteresis",
+        "boiler_temp_reduction": "Temp. reduction",
+        "no_fire_time": "Extinguishing time",
+        "clean_period": "Cleaning interval",
+        "clean_time": "Cleaning time",
+        "modulation_min": "Min. boiler power",
+        "modulation_max": "Max. boiler power",
+        "modulation_dynamics": "Dynamics",
+        "overtemp_time": "Overtemp. time",
+        "fuel_correction": "Dose correction",
+        "exhaust_temp_max": "Max. flue gas temp.",
+        "feed_time": "Feed time",
+        "break_time": "Pause time",
+        "air": "Air",
+        "standby_air_time": "Blow time",
+        "standby_exit_time": "Standby exit",
+        "air_min": "Min. (10% power)",
+        "air_max": "Max. (100% power)",
+        "feed_air_boost": "Extra air when feeding",
+        "feeder_efficiency": "Capacity",
+        "max_feed_time": "Max. feed time",
+        "boiler_power": "Rated power (kW)",
+        "dhw_overshoot": "Boiler temp. boost",
+        "dhwc_temp_on": "Activation temp.",
+        "dhwc_work_time": "Run time",
+        "mixer_opening_min": "Min. opening",
+        "mixer_opening_max": "Max. opening",
+        "mixer_gain": "Gain",
+        "mixer_stabilization_time": "Stabilization time",
+        "mixer_temp_setpoint": "Setpoint",
+        "mixer_temp_min": "Minimum",
+        "mixer_temp_max": "Maximum",
+        "mixer_temp_reduction": "Reduction",
+        "room_comfort_temp": "Comfort temp.",
+        "room_eco_temp": "Economy temp.",
+        "weather_correction": "Correction",
+        "weather_stop_temp": "Circuit shutdown temp.",
+        "enabled": "On/off",
+        "dhw_priority": "Priority on/off",
+        "dhwc_always_on": "Always on",
+        "return_temp_min": "Min. temp.",
+        "work_mode": "Mode",
+        "boiler_temp_current": "Current boiler temp.",
+        "boiler_return_temp": "Return temp.",
+        "burner_temp": "Burner temp.",
+        "exhaust_temp": "Flue gas temp.",
+        "oxygen": "Oxygen",
+        "flame_sensor": "Flame sensor",
+        "boiler_reduced_setpoint": "Reduced set temp.",
+        "boiler_power_current": "Boiler power",
+        "fan_power": "Fan power",
+        "fuel_capacity": "Hopper capacity",
+        "fuel_remaining": "Remaining",
+        "fuel_consumption_total": "Total consumption",
+        "fuel_consumption_daily": "Daily consumption",
+        "fuel_consumption_rate": "Current consumption",
+        "dhw_temp_current": "Current temp.",
+        "outdoor_temp": "Outdoor temp.",
+        "buffer_temp_top": "Top temp.",
+        "buffer_temp_bottom": "Bottom temp.",
+        "mixer_supply_temp": "Supply temp.",
+        "target_temperature": "Target temp.",
+        "mixer_opening": "Opening",
+        "room_temp": "Room temp.",
+        "feeder": "Feeder on/off",
+        "pump_state": "Pump on/off",
+        "heater": "Heater on/off"
       }
     }
   },
   "common": {
     "controller_name": "Controller {model}",
+    "firmware_version": "Firmware version: {version}",
     "no_alarms": "No alarms",
     "active_alarm_count": "Active alarms: {count}",
     "state_on": "on",
     "state_off": "off",
     "connection_lost_title": "SKZP controller connection lost",
-    "connection_lost_message": "No new data has been received from the controller for at least {seconds} seconds. Check the connection to controller {host}:{port}.",
+    "connection_lost_message": "No valid data received from controller {host}:{port} for at least {seconds} s. Check the connection.",
     "connection_restored_title": "SKZP controller connection restored",
     "connection_restored_message": "Controller {host}:{port} is sending data again.",
     "alarm_no_fuel": "No fuel",
@@ -1189,6 +1380,61 @@
     "alarm_piston_blocked": "Piston blocked",
     "alarm_ignition_failed": "Ignition failed",
     "alarm_low_fuel": "Low fuel level",
-    "alarm_high_boiler_temp": "High boiler temperature"
+    "alarm_high_boiler_temp": "High boiler temperature",
+    "profile_on": "On",
+    "profile_off": "Off",
+    "profile_skip_unsupported": "unsupported parameter",
+    "profile_skip_invalid_value": "invalid value or mode",
+    "profile_skip_out_of_range": "value outside the allowed range",
+    "profile_skip_duplicate": "duplicate setting",
+    "profile_skipped": "Skipped parameters:",
+    "profile_result_saved": "Saved",
+    "profile_result_failed": "Unconfirmed",
+    "profile_result_remaining": "Not sent",
+    "profile_download_label": "Download file",
+    "profile_back": "← Back",
+    "profile_value_difference": "Controller: {current} · Profile: {profile}",
+    "profile_result_count": "Settings saved: {count} of {total}.",
+    "profile_page_boiler_burner": "Boiler / Burner",
+    "profile_page_dhw_buffer": "DHW / Buffer",
+    "profile_page_dhw": "DHW",
+    "profile_page_circuit": "CH{number} circuit",
+    "profile_updated": "Last updated: {date}",
+    "profile_compare_file": "Profile: {saved} · File: {incoming}",
+    "profile_compare_controller": "Profile: {saved} · Controller: {incoming}",
+    "profile_value_new": "new setting",
+    "profile_table_setting": "Setting",
+    "profile_table_value": "Value",
+    "profile_select_new": "Select settings to save",
+    "profile_select_update": "Select settings to update",
+    "profile_saved_value": "Saved value: {value}",
+    "profile_value_range": "Range: {value}",
+    "profile_removed_settings": "Settings to remove from the profile",
+    "profile_settings_to_save": "Settings to save",
+    "profile_settings_to_update": "Settings to update",
+    "profile_settings_to_send": "Settings to send",
+    "profile_table_on": "On",
+    "profile_table_off": "Off",
+    "profile_save_new": "Create a profile from controller settings.",
+    "profile_save_existing": "Create or update a profile from controller settings.",
+    "profile_import_new": "Create a profile from a file.",
+    "profile_import_existing": "Create or update a profile from a file.",
+    "profile_matches_controller": "The profile matches the current controller settings.",
+    "profile_matches_file": "The profile matches the settings in the file.",
+    "profile_no_changes": "No settings need updating.",
+    "profile_skip_schedule": "unsupported schedule",
+    "profile_skip_read_only": "read-only parameter",
+    "profile_skip_details": "Technical details",
+    "profile_skip_group_schedule": "Schedules ({count}) — not currently supported.",
+    "profile_skip_group_read_only": "Read-only parameters ({count}).",
+    "profile_skip_group_unsupported": "Unsupported parameters ({count}) — not supported by the integration.",
+    "profile_skip_group_invalid_value": "Invalid values or modes ({count}).",
+    "profile_skip_group_out_of_range": "Values outside the allowed range ({count}).",
+    "profile_skip_group_duplicate": "Duplicate settings ({count}).",
+    "profile_select_send": "Select settings",
+    "profile_edit_title": "Edit settings",
+    "profile_send_description": "Profile: {name}\n\nSelect settings to send.{skipped}",
+    "profile_write_description": "Select settings to save in the profile.{skipped}",
+    "profile_edit_description": "Profile: {name}\n\nEdit the settings saved in the profile.{skipped}"
   }
 }

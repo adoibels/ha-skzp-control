@@ -1,56 +1,57 @@
 import asyncio
+import errno
 import json
+import socket
 import unittest
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 import support
-from skzp_control.client.client import SkzpClient
 from skzp_control.client.transport import TcpTransport
 from skzp_control.client.protocol import SkzpProtocol
-from skzp_control.client.exceptions import NotConnectedError, MissingCredentialsError
-from skzp_control.coordinator import SkzpCoordinator
+from skzp_control.client.exceptions import ConnectionClosedError, NotConnectedError, MissingCredentialsError
+from skzp_control.coordinator import SkzpCoordinator, format_communication_error
+from skzp_control.frame_parser import FrameTooLargeError, InvalidFrameError
 
-class Writer:
-    def __init__(self, *, stall=False, fail_at=None, close_stall=False):
-        self.reader = asyncio.StreamReader()
-        self.transport = self
-        self.frames = []
-        self.active = self.closed = self.aborted = False
-        self.stall, self.fail_at, self.close_stall = stall, fail_at, close_stall
-        self.started = asyncio.Event()
-    def is_closing(self): return self.closed or self.aborted
-    def write(self, payload):
-        assert not self.active, 'overlapping writes'
-        self.active = True
-        self.frames.append(payload)
-    async def drain(self):
-        self.started.set()
-        try:
-            if self.stall: await asyncio.Event().wait()
-            await asyncio.sleep(0)
-            if len(self.frames) == self.fail_at: raise OSError('secret must not be logged')
-        finally: self.active = False
-    def close(self): self.closed = True; self.reader.feed_eof()
-    def abort(self): self.aborted = True; self.reader.feed_eof()
-    async def wait_closed(self):
-        if self.close_stall: await asyncio.Event().wait()
+from helpers import Writer, attach, make_client
 
-def attach(t, w): t._reader, t._writer = w.reader, w
-
-def make_client(w, ha=False):
-    if ha:
-        c = SkzpCoordinator(SimpleNamespace(bus=SimpleNamespace(async_fire=lambda *_: None), config=SimpleNamespace(language='en')), 'host', 1, 'id', {})
-        c._set_connected(True)
-        c._data_ready_event.set()
-        import time
-        c._last_data_received = time.monotonic()
-    else: c = SkzpClient('host', 1)
-    attach(c.transport, w)
-    c.transport.write_timeout = c.transport.close_timeout = .02
-    c.data.update(DevId=1, DevPin=2, Token='secret')
-    return c
 
 class ProtocolTests(unittest.TestCase):
+    def test_safe_error_descriptions_and_codes(self):
+        windows_error = OSError('secret')
+        windows_error.winerror = 10054
+        for error, expected in (
+            (TimeoutError('secret'), 'Operation timed out'),
+            (OSError(errno.ECONNREFUSED, 'secret'), f'Connection refused (error {errno.ECONNREFUSED})'),
+            (OSError(errno.EHOSTUNREACH, 'secret'), f'Host unreachable (error {errno.EHOSTUNREACH})'),
+            (OSError(99999, 'secret'), 'Network operation failed (error 99999)'),
+            (OSError('secret'), 'Network operation failed'),
+            (windows_error, 'Connection reset by peer (error 10054)'),
+            (ConnectionResetError('secret'), 'Connection reset by peer'),
+            (socket.gaierror(socket.EAI_AGAIN, 'secret'), f'Address lookup failed (error {socket.EAI_AGAIN})'),
+            (ConnectionClosedError('secret'), 'TCP connection closed by peer'),
+            (NotConnectedError('secret'), 'Connection unavailable or interrupted'),
+            (InvalidFrameError('secret'), 'Invalid JSON or UTF-8 data received'),
+            (FrameTooLargeError('secret'), 'Received data exceeds the size limit'),
+            (ValueError('secret'), 'Invalid value or data format'),
+            (RuntimeError('secret'), 'RuntimeError'),
+        ):
+            with self.subTest(error=type(error).__name__, expected=expected):
+                self.assertEqual(format_communication_error(error), expected)
+                self.assertNotIn('secret', format_communication_error(error))
+
+    def test_one_debug_entry_per_command_attempt(self):
+        client = SkzpCoordinator(SimpleNamespace(), 'host', 1, 'entry', {})
+        client.command_retry_count = 2
+        with self.assertLogs('skzp_control.coordinator', level='DEBUG') as logs:
+            for attempt in range(3):
+                client.log_command_sent('CH1 Mode', 'Active', attempt)
+        self.assertEqual([record.levelname for record in logs.records], ['DEBUG'] * 3)
+        self.assertEqual([record.getMessage() for record in logs.records], [
+            '[SKZP Control] host:1 — Command sent: CH1 Mode = Active.',
+            '[SKZP Control] host:1 — Command resent: CH1 Mode = Active (retry 1/2).',
+            '[SKZP Control] host:1 — Command resent: CH1 Mode = Active (retry 2/2).',
+        ])
+
     def test_firmware_update_refreshes_registry_once_and_requires_reload(self):
         client = SkzpCoordinator(SimpleNamespace(), 'host', 1, 'entry', {})
         old = 'SKZP-05S_V5.65_2025-06-17'
@@ -59,7 +60,7 @@ class ProtocolTests(unittest.TestCase):
         client.data['DevType'] = old
         self.assertFalse(client.requires_platform_reload)
         registry = Mock()
-        registry.async_get_device.return_value = SimpleNamespace(
+        registry.async_get_device_by_identifier.return_value = SimpleNamespace(
             id='device', sw_version='5.65 (2025-06-17)'
         )
         with patch('skzp_control.coordinator.dr.async_get', return_value=registry,
@@ -72,6 +73,10 @@ class ProtocolTests(unittest.TestCase):
         registry.async_update_device.assert_called_once_with(
             'device', sw_version='5.71 (2026-10-04)'
         )
+        registry.async_get_device_by_identifier.assert_called_once_with(
+            ('skzp_control', 'entry'), 'entry'
+        )
+        registry.async_get_device.assert_not_called()
         self.assertTrue(client.requires_platform_reload)
         client.platform_device_type = new
         self.assertFalse(client.requires_platform_reload)
@@ -80,7 +85,7 @@ class ProtocolTests(unittest.TestCase):
         client = SkzpCoordinator(SimpleNamespace(), 'host', 1, 'entry', {})
         fields = {'DevType': 'SKZP-05S_V5.71_2026-10-04'}
         registry = Mock()
-        registry.async_get_device.side_effect = [None, SimpleNamespace(
+        registry.async_get_device_by_identifier.side_effect = [None, SimpleNamespace(
             id='device', sw_version='5.71 (2026-10-04)')]
         with patch('skzp_control.coordinator.dr.async_get', return_value=registry,
                    create=True):
@@ -246,5 +251,119 @@ class TransportTests(unittest.IsolatedAsyncioTestCase):
         with self.assertLogs('skzp_control.coordinator',level='WARNING') as logs:
             with self.assertRaises(support.HAError): await c.send_command({'Token':'secret'})
         self.assertNotIn('secret',''.join(logs.output))
+
+    async def test_receive_error_logs_have_address_and_safe_reason(self):
+        for payload, reason in (
+            (b'', 'TCP connection closed by peer'),
+            (b'{"Token": SECRET}', 'Invalid JSON or UTF-8 data received'),
+            (b'{"Token":"' + b'SECRET' * 11000, 'Received data exceeds the size limit'),
+        ):
+            with self.subTest(reason=reason):
+                writer = Writer(); client = make_client(writer, True)
+                client._connect = AsyncMock()
+                async def reconnect(message, *args):
+                    client._log_connection_issue(message, *args)
+                    raise asyncio.CancelledError()
+                client._reconnect = reconnect
+                if payload:
+                    writer.reader.feed_data(payload)
+                else:
+                    writer.reader.feed_eof()
+                with self.assertLogs('skzp_control', level='DEBUG') as logs:
+                    with self.assertRaises(asyncio.CancelledError):
+                        await client._read_loop()
+                    await client.disconnect()
+                messages = [record.getMessage() for record in logs.records]
+                self.assertTrue(all('[SKZP Control] host:1 — ' in text for text in messages))
+                self.assertIn(reason, '\n'.join(messages))
+                self.assertNotIn('SECRET', '\n'.join(messages))
+                self.assertEqual(sum(record.levelname == 'WARNING' for record in logs.records), 1)
+
+
+class WatchdogTests(unittest.IsolatedAsyncioTestCase):
+    async def ticks(self, client, values):
+        positions = iter(values)
+        clock = SimpleNamespace(value=0)
+        async def step(_delay):
+            try:
+                clock.value = next(positions)
+            except StopIteration:
+                raise asyncio.CancelledError() from None
+        with patch('skzp_control.coordinator.time', SimpleNamespace(monotonic=lambda: clock.value)), \
+             patch('skzp_control.coordinator.asyncio.sleep', step):
+            with self.assertRaises(asyncio.CancelledError):
+                await client._watchdog_loop()
+
+    async def test_restarts_only_active_silent_connection_once(self):
+        for name, connected, last_data, connected_at, times, expected in (
+            ('healthy', True, 100, 100, [127, 128, 129], 0),
+            ('silent', True, 100, 100, [130, 131, 132], 1),
+            ('offline with old data', False, 100, None, [131, 132, 133], 0),
+            ('fresh connection', True, 100, 200, [201, 215, 229], 0),
+            ('fresh but silent', True, 100, 200, [230, 231, 232], 1),
+            ('first connection', True, None, 200, [229, 230, 231], 1),
+            ('before first connection', False, None, None, [230, 231], 0),
+        ):
+            with self.subTest(scenario=name):
+                client = make_client(Writer(), True)
+                client.no_data_timeout = 30
+                client._last_data_received = last_data
+                if not connected:
+                    client.transport.abort()
+                    client._set_connected(False)
+                client._connected_at = connected_at
+                with patch.object(client.transport, 'abort', wraps=client.transport.abort) as abort, \
+                     patch('skzp_control.coordinator._LOGGER.log') as log, \
+                     patch('skzp_control.coordinator.persistent_notification.async_create') as notify:
+                    await self.ticks(client, times)
+                    self.assertEqual(abort.call_count, expected)
+                    self.assertEqual(log.call_count, expected)
+                    self.assertEqual(notify.call_count, expected if client.notify_connection_lost else 0)
+                await client.disconnect()
+
+    async def test_pending_reconnect_is_not_aborted(self):
+        client = make_client(Writer(), True)
+        client.transport.abort(); client._set_connected(False)
+        client._last_data_received = 100
+        entered = asyncio.Event(); release = asyncio.Event(); writer = Writer()
+        async def opening(*_args):
+            entered.set()
+            await release.wait()
+            return writer.reader, writer
+        with patch('asyncio.open_connection', opening), \
+             patch.object(client.transport, 'abort', wraps=client.transport.abort) as abort:
+            task = asyncio.create_task(client.connect())
+            await entered.wait()
+            await self.ticks(client, [131, 132, 133])
+            abort.assert_not_called()
+            release.set()
+            await task
+        self.assertTrue(client.transport.connected)
+        self.assertFalse(writer.aborted)
+        await client.disconnect()
+
+    async def test_reconnected_outage_keeps_fresh_deadline_and_one_notification(self):
+        client = make_client(Writer(), True)
+        client.no_data_timeout = 30
+        client._last_data_received = client._connected_at = 100
+        client.notify_connection_lost = client.notify_connection_restored = True
+        with patch('skzp_control.coordinator._LOGGER.log'), \
+             patch('skzp_control.coordinator.persistent_notification.async_create') as notify:
+            await self.ticks(client, [130, 131])
+            self.assertEqual(notify.call_count, 1)
+            attach(client.transport, Writer())
+            with patch('skzp_control.coordinator.time', SimpleNamespace(monotonic=lambda: 200)):
+                client._set_connected(True)
+            await self.ticks(client, [201, 229])
+            self.assertTrue(client.connected)
+            await self.ticks(client, [230, 231])
+            self.assertFalse(client.connected)
+            self.assertEqual(notify.call_count, 1)
+            attach(client.transport, Writer())
+            client._set_connected(True)
+            client._mark_data_received()
+            client._mark_data_received()
+            self.assertEqual(notify.call_count, 2)
+        await client.disconnect()
 
 if __name__=='__main__': unittest.main()

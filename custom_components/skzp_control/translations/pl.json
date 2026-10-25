@@ -3,26 +3,26 @@
     "step": {
       "user": {
         "title": "Konfiguracja SKZP Control",
-        "description": "Podaj adres IP i port TCP modułu LAN/Wi‑Fi sterownika SKZP.",
+        "description": "Połącz się ze sterownikiem, aby rozpocząć konfigurację.",
         "data": {
           "host": "Adres IP",
           "port": "Port TCP"
         },
         "data_description": {
-          "host": "Przykład: 192.168.1.100",
-          "port": "Przykład: 80"
+          "host": "Adres modułu LAN/Wi-Fi sterownika w sieci lokalnej.",
+          "port": "Numer portu TCP ustawiony w module LAN/Wi-Fi."
         }
       },
       "unsupported_device": {
         "title": "Nieobsługiwany sterownik",
-        "description": "Odebrano dane ze sterownika: {dev_type}.\n\nTen model nie jest jeszcze obsługiwany przez SKZP Control. Nie zostaną utworzone urządzenie ani encje.\n\n[Pobierz ramkę danych (.json)]({download_url})\n\nPlik zawiera wyłącznie odebraną ramkę z ukrytymi polami DevId, DevPin i Token. Odnośnik jest ważny przez 10 minut lub do zamknięcia tego formularza. Aby ponowić odczyt, wybierz Wróć.",
+        "description": "Odebrano dane ze sterownika: {dev_type}.\n\nTen model nie jest jeszcze obsługiwany przez SKZP Control. Nie zostaną utworzone urządzenie ani encje.\n\n[Pobierz dane sterownika (.json)]({download_url})\n\nPlik zawiera wyłącznie odebrane dane z ukrytymi polami DevId, DevPin i Token. Odnośnik jest ważny przez 10 minut lub do zamknięcia tego formularza. Aby ponowić odczyt, wybierz Wróć.",
         "menu_options": {
-          "retry_connection": "Wróć"
+          "retry_connection": "← Wróć"
         }
       },
       "selection_method": {
         "title": "Sposób konfiguracji",
-        "description": "Wykryto sterownik: {model}. Wybierz sposób konfiguracji.",
+        "description": "Wykryto sterownik {model}.{firmware}\n\nWybierz sposób konfiguracji.",
         "menu_options": {
           "quick": "Szybka",
           "advanced": "Zaawansowana"
@@ -32,9 +32,23 @@
           "advanced": "Dostosuj wybór encji i ustawienia integracji."
         }
       },
-      "entities": {
+      "init": {
         "title": "SKZP Control",
-        "description": "Sterownik {model}\n\nWybrano {selected} z {total} dostępnych encji.",
+        "description": "Dostosuj wybór encji i ustawienia integracji.",
+        "menu_options": {
+          "entities": "Wybór encji",
+          "settings": "Ustawienia zaawansowane",
+          "finish": "Zapisz ustawienia"
+        },
+        "menu_option_descriptions": {
+          "entities": "Wybierz odczyty, stany i parametry sterownika.",
+          "settings": "Zmień ustawienia sterowania, komunikacji i powiadomień.",
+          "finish": "Zapisz wybór encji i ustawienia."
+        }
+      },
+      "entities": {
+        "title": "Wybór encji",
+        "description": "Wybrane encje: {selected} / {total}\n\nPo zakończeniu wróć do menu głównego i wybierz „Zapisz ustawienia”.",
         "menu_options": {
           "boiler_burner": "Kocioł / Palnik",
           "dhw_buffer": "CWU / Bufor",
@@ -45,21 +59,7 @@
           "select_all": "Zaznacz wszystkie",
           "deselect_all": "Odznacz wszystkie",
           "restore_recommended": "Przywróć zalecane",
-          "settings": "Ustawienia zaawansowane",
-          "finish": "Zapisz ustawienia"
-        },
-        "menu_option_descriptions": {
-          "boiler_burner": "Wybierz encje kotła i palnika.",
-          "dhw_buffer": "Wybierz encje CWU i bufora.",
-          "dhw": "Wybierz encje CWU.",
-          "ch1": "Wybierz encje obiegu CO1.",
-          "ch2": "Wybierz encje obiegu CO2.",
-          "ch3": "Wybierz encje obiegu CO3.",
-          "select_all": "Zaznacz wszystkie dostępne encje.",
-          "deselect_all": "Odznacz wszystkie opcjonalne encje.",
-          "restore_recommended": "Przywróć zalecany wybór encji.",
-          "settings": "Zmień ustawienia sterowania, komunikacji i powiadomień.",
-          "finish": "Zapisz wybór encji i ustawienia."
+          "init": "← Wróć"
         }
       },
       "boiler_burner": {
@@ -132,9 +132,9 @@
           }
         }
       },
-      "ch1": {
-        "title": "Obieg CO1",
-        "description": "Wybierz odczyty, stany i parametry obiegu CO1.",
+      "circuit": {
+        "title": "Obieg CO{number}",
+        "description": "Wybierz odczyty, stany i parametry obiegu CO{number}.",
         "sections": {
           "sensors": {
             "name": "Sensory i stany",
@@ -153,54 +153,6 @@
               "room": "Regulator pokojowy",
               "weather": "Regulator pogodowy",
               "return": "Ochrona powrotu"
-            }
-          }
-        }
-      },
-      "ch2": {
-        "title": "Obieg CO2",
-        "description": "Wybierz odczyty, stany i parametry obiegu CO2.",
-        "sections": {
-          "sensors": {
-            "name": "Sensory i stany",
-            "data": {
-              "circuit": "Obieg",
-              "mixer": "Mieszacz",
-              "room": "Regulator pokojowy"
-            }
-          },
-          "configuration": {
-            "name": "Konfiguracja",
-            "data": {
-              "work_mode": "Obieg",
-              "mixer": "Mieszacz",
-              "temperatures": "Temperatury",
-              "room": "Regulator pokojowy",
-              "weather": "Regulator pogodowy"
-            }
-          }
-        }
-      },
-      "ch3": {
-        "title": "Obieg CO3",
-        "description": "Wybierz odczyty, stany i parametry obiegu CO3.",
-        "sections": {
-          "sensors": {
-            "name": "Sensory i stany",
-            "data": {
-              "circuit": "Obieg",
-              "mixer": "Mieszacz",
-              "room": "Regulator pokojowy"
-            }
-          },
-          "configuration": {
-            "name": "Konfiguracja",
-            "data": {
-              "work_mode": "Obieg",
-              "mixer": "Mieszacz",
-              "temperatures": "Temperatury",
-              "room": "Regulator pokojowy",
-              "weather": "Regulator pogodowy"
             }
           }
         }
@@ -237,18 +189,23 @@
         "data": {
           "host": "Adres IP",
           "port": "Port TCP"
+        },
+        "data_description": {
+          "host": "Adres modułu LAN/Wi-Fi sterownika w sieci lokalnej.",
+          "port": "Numer portu TCP ustawiony w module LAN/Wi-Fi."
         }
       }
     },
     "error": {
       "cannot_connect": "Nie udało się połączyć ze sterownikiem. Sprawdź adres IP i port TCP oraz upewnij się, że moduł LAN/Wi‑Fi jest dostępny w sieci.",
-      "cannot_read_device": "Połączenie zostało nawiązane, ale sterownik nie przesłał kompletnej ramki danych.",
+      "cannot_read_device": "Połączono ze sterownikiem, ale nie odebrano prawidłowych danych.",
+      "invalid_host": "Wprowadź poprawny adres IP lub nazwę hosta.",
       "invalid_port": "Wprowadź numer portu od 1 do 65535."
     },
     "abort": {
       "already_configured": "To urządzenie jest już skonfigurowane.",
       "already_in_progress": "Konfiguracja tego sterownika jest już otwarta. Zamknij poprzedni formularz lub uruchom ponownie Home Assistant.",
-      "cannot_read_device": "Nie można dokończyć konfiguracji bez kompletnej ramki danych sterownika.",
+      "cannot_read_device": "Nie można dokończyć konfiguracji bez prawidłowych danych sterownika.",
       "reconfigure_successful": "Ustawienia połączenia zostały zapisane."
     }
   },
@@ -256,7 +213,23 @@
     "step": {
       "init": {
         "title": "SKZP Control",
-        "description": "Sterownik {model}\n\nWybrano {selected} z {total} dostępnych encji.",
+        "description": "Dostosuj wybór encji, ustawienia integracji i profile nastaw.",
+        "menu_options": {
+          "entities": "Wybór encji",
+          "profiles": "Profile nastaw",
+          "settings": "Ustawienia zaawansowane",
+          "finish": "Zapisz ustawienia"
+        },
+        "menu_option_descriptions": {
+          "entities": "Wybierz odczyty, stany i parametry sterownika.",
+          "profiles": "Zarządzaj zapisanymi nastawami sterownika.",
+          "settings": "Zmień ustawienia sterowania, komunikacji i powiadomień.",
+          "finish": "Zapisz wybór encji i ustawienia."
+        }
+      },
+      "entities": {
+        "title": "Wybór encji",
+        "description": "Wybrane encje: {selected} / {total}\n\nPo zakończeniu wróć do menu głównego i wybierz „Zapisz ustawienia”.",
         "menu_options": {
           "boiler_burner": "Kocioł / Palnik",
           "dhw_buffer": "CWU / Bufor",
@@ -267,21 +240,7 @@
           "select_all": "Zaznacz wszystkie",
           "deselect_all": "Odznacz wszystkie",
           "restore_recommended": "Przywróć zalecane",
-          "settings": "Ustawienia zaawansowane",
-          "finish": "Zapisz ustawienia"
-        },
-        "menu_option_descriptions": {
-          "boiler_burner": "Wybierz encje kotła i palnika.",
-          "dhw_buffer": "Wybierz encje CWU i bufora.",
-          "dhw": "Wybierz encje CWU.",
-          "ch1": "Wybierz encje obiegu CO1.",
-          "ch2": "Wybierz encje obiegu CO2.",
-          "ch3": "Wybierz encje obiegu CO3.",
-          "select_all": "Zaznacz wszystkie dostępne encje.",
-          "deselect_all": "Odznacz wszystkie opcjonalne encje.",
-          "restore_recommended": "Przywróć zalecany wybór encji.",
-          "settings": "Zmień ustawienia sterowania, komunikacji i powiadomień.",
-          "finish": "Zapisz wybór encji i ustawienia."
+          "init": "← Wróć"
         }
       },
       "settings": {
@@ -380,9 +339,9 @@
           }
         }
       },
-      "ch1": {
-        "title": "Obieg CO1",
-        "description": "Wybierz odczyty, stany i parametry obiegu CO1.",
+      "circuit": {
+        "title": "Obieg CO{number}",
+        "description": "Wybierz odczyty, stany i parametry obiegu CO{number}.",
         "sections": {
           "sensors": {
             "name": "Sensory i stany",
@@ -405,54 +364,223 @@
           }
         }
       },
-      "ch2": {
-        "title": "Obieg CO2",
-        "description": "Wybierz odczyty, stany i parametry obiegu CO2.",
+      "profiles": {
+        "title": "Profile nastaw",
+        "menu_options": {
+          "profile_save": "Zapisz bieżące nastawy",
+          "profile_import": "Importuj profil",
+          "profile_manage": "Zarządzaj profilami",
+          "init": "← Wróć"
+        },
+        "menu_option_descriptions": {
+          "profile_manage": "Wczytaj, edytuj lub usuń zapisany profil."
+        }
+      },
+      "profile_save": {
+        "title": "Zapisz bieżące nastawy",
+        "menu_options": {
+          "profile_save_new": "Utwórz nowy profil",
+          "profile_save_update": "Aktualizuj istniejący profil",
+          "profiles": "← Wróć"
+        }
+      },
+      "profile_import": {
+        "title": "Importuj profil",
+        "menu_options": {
+          "profile_import_new": "Utwórz nowy profil",
+          "profile_import_update": "Aktualizuj istniejący profil",
+          "profiles": "← Wróć"
+        }
+      },
+      "profile_confirm": {
+        "title": "Potwierdź wysłanie nastaw",
+        "menu_options": {
+          "profile_send": "Wyślij do sterownika",
+          "profile_preview": "Popraw wybór nastaw",
+          "profile_menu": "Anuluj"
+        }
+      },
+      "profile_temperature_limit": {
+        "title": "Przekroczenie limitu temperatury",
+        "description": "Temperatura zadana kotła {value} przekracza limit integracji wynoszący {limit}.\n\nZgoda dotyczy tylko tego wysyłania profilu.",
+        "menu_options": {
+          "profile_preview": "Wróć do wyboru nastaw",
+          "profile_send_override": "Wyślij mimo to"
+        }
+      },
+      "profile_apply": {
+        "title": "Wysyłanie nastaw"
+      },
+      "profile_result": {
+        "title": "Wynik wysyłania nastaw"
+      },
+      "profile_download": {
+        "title": "Pobierz profil",
+        "description": "{download_link}\n\nOdnośnik jest ważny przez 10 minut lub do zamknięcia formularza."
+      },
+      "profile_delete": {
+        "title": "Usuń profil",
+        "description": "Usunąć profil „{name}”?",
+        "menu_options": {
+          "profile_delete_confirm": "Usuń profil",
+          "profile_menu": "Anuluj"
+        }
+      },
+      "profile_unchanged": {
+        "title": "Brak zmian",
+        "description": "Nastawy profilu są zgodne z aktualnymi nastawami sterownika.{skipped}"
+      },
+      "profile_import_review": {
+        "title": "Zapisz importowany profil",
+        "description": "Sprawdź nastawy i zapisz profil.\n\n{settings}{skipped}",
+        "data": {
+          "name": "Nazwa profilu",
+          "description": "Opis"
+        }
+      },
+      "profile_manage": {
+        "title": "Zarządzaj profilami"
+      },
+      "profile_menu": {
+        "title": "Zarządzaj profilem",
+        "menu_options": {
+          "profile_load": "Wczytaj do sterownika",
+          "profile_rename": "Zmień nazwę i opis",
+          "profile_edit_settings": "Edytuj nastawy",
+          "profile_remove_settings": "Usuń nastawy z profilu",
+          "profile_export": "Pobierz profil",
+          "profile_delete": "Usuń profil",
+          "profile_manage": "← Wróć"
+        }
+      },
+      "profile_rename": {
+        "title": "Zmień nazwę i opis",
+        "data": {
+          "name": "Nazwa profilu",
+          "description": "Opis"
+        }
+      },
+      "profile_delete_error": {
+        "title": "Nie udało się usunąć profilu"
+      },
+      "profile_file": {
+        "title": "Importuj profil",
+        "description": "Wybierz plik z nastawami sterownika.",
+        "data": {
+          "file": "Plik JSON"
+        }
+      },
+      "profile_name": {
+        "title": "Utwórz nowy profil",
+        "description": "Utwórz profil z bieżących nastaw sterownika.{skipped}",
+        "data": {
+          "name": "Nazwa profilu",
+          "description": "Opis"
+        }
+      },
+      "profile_update_pick": {
+        "title": "Wybierz profil do aktualizacji"
+      },
+      "profile_remove_settings": {
+        "title": "Usuń nastawy z profilu",
+        "description": "Profil: {name}\n\nZaznacz nastawy do usunięcia z profilu.{skipped}",
         "sections": {
-          "sensors": {
-            "name": "Sensory i stany",
+          "boiler_burner": {
             "data": {
-              "circuit": "Obieg",
-              "mixer": "Mieszacz",
-              "room": "Regulator pokojowy"
+              "settings": "Nastawy"
             }
           },
-          "configuration": {
-            "name": "Konfiguracja",
+          "dhw_buffer": {
             "data": {
-              "work_mode": "Obieg",
-              "mixer": "Mieszacz",
-              "temperatures": "Temperatury",
-              "room": "Regulator pokojowy",
-              "weather": "Regulator pogodowy"
+              "settings": "Nastawy"
+            }
+          },
+          "ch1": {
+            "data": {
+              "settings": "Nastawy"
+            }
+          },
+          "ch2": {
+            "data": {
+              "settings": "Nastawy"
+            }
+          },
+          "ch3": {
+            "data": {
+              "settings": "Nastawy"
             }
           }
         }
       },
-      "ch3": {
-        "title": "Obieg CO3",
-        "description": "Wybierz odczyty, stany i parametry obiegu CO3.",
-        "sections": {
-          "sensors": {
-            "name": "Sensory i stany",
-            "data": {
-              "circuit": "Obieg",
-              "mixer": "Mieszacz",
-              "room": "Regulator pokojowy"
-            }
-          },
-          "configuration": {
-            "name": "Konfiguracja",
-            "data": {
-              "work_mode": "Obieg",
-              "mixer": "Mieszacz",
-              "temperatures": "Temperatury",
-              "room": "Regulator pokojowy",
-              "weather": "Regulator pogodowy"
-            }
-          }
+      "profile_remove_confirm": {
+        "title": "Potwierdź usunięcie nastaw z profilu",
+        "menu_options": {
+          "profile_write_commit": "Usuń nastawy z profilu",
+          "profile_write_back": "Popraw wybór nastaw",
+          "profile_write_cancel": "Anuluj"
         }
+      },
+      "profile_create_confirm": {
+        "title": "Potwierdź zapis profilu",
+        "menu_options": {
+          "profile_write_commit": "Zapisz profil",
+          "profile_write_back": "Popraw wybór nastaw",
+          "profile_write_cancel": "Anuluj"
+        }
+      },
+      "profile_update_confirm": {
+        "title": "Potwierdź aktualizację profilu",
+        "menu_options": {
+          "profile_write_commit": "Aktualizuj profil",
+          "profile_write_back": "Popraw wybór nastaw",
+          "profile_write_cancel": "Anuluj"
+        }
+      },
+      "profile_duplicate": {
+        "title": "Powtarzająca się nazwa",
+        "description": "Istnieje już profil o nazwie „{name}”. Zapisać mimo to?",
+        "menu_options": {
+          "profile_duplicate_continue": "Zapisz mimo to",
+          "profile_duplicate_edit": "Zmień nazwę",
+          "profiles": "Anuluj"
+        }
+      },
+      "profile_write_unchanged": {
+        "title": "Brak zmian"
+      },
+      "profile_save_error": {
+        "title": "Nie udało się odczytać nastaw"
+      },
+      "profile_write_error": {
+        "title": "Nie udało się zapisać profilu"
       }
+    },
+    "error": {
+      "profile_offline": "Brak aktualnego połączenia ze sterownikiem.",
+      "profile_model_mismatch": "Profil pochodzi z innego modelu sterownika.",
+      "profile_invalid_pair": "Wartość minimalna nie może być większa od maksymalnej. Zaznacz również powiązaną nastawę lub popraw profil.",
+      "profile_changed": "Dane zmieniły się. Sprawdź ponownie podgląd i wybór nastaw.",
+      "profile_no_selection": "Zaznacz przynajmniej jedną zmianę.",
+      "profile_busy": "Trwa wysyłanie innego polecenia lub profilu. Spróbuj ponownie po zakończeniu.",
+      "profile_not_confirmed": "Sterownik nie potwierdził zmiany. Import zatrzymano; wcześniejsze zapisy pozostają w sterowniku.",
+      "profile_send_failed": "Wysyłanie przerwano. Sprawdź nastawy sterownika przed ponowieniem importu.",
+      "profile_cancelled": "Import anulowano. Wysłane wcześniej nastawy mogły już zostać zapisane.",
+      "invalid_profile": "Niepoprawny lub nieobsługiwany plik profilu. Wymagany JSON SKZP Control lub Timel (maks. 64 KiB).",
+      "profile_empty": "Brak poprawnych nastaw obsługiwanych przez ten sterownik.",
+      "profile_count_limit": "Zapisano już 20 profili. Usuń jeden z nich przed dodaniem kolejnego.",
+      "profile_invalid_name": "Podaj nazwę o długości od 1 do 80 znaków.",
+      "profile_storage_error": "Nie udało się odczytać lub zapisać pliku profilu.",
+      "profile_required": "Wybierz profil lub wróć do menu.",
+      "profile_file_required": "Wybierz plik JSON lub wróć do menu.",
+      "profile_invalid_description": "Opis może zawierać maksymalnie 1000 znaków.",
+      "invalid_value": "Podaj poprawną wartość lub wybierz dostępny tryb.",
+      "out_of_range": "Wartość jest poza dozwolonym zakresem.",
+      "profile_comparison_unavailable": "Nie można porównać nastaw. Brak poprawnych, aktualnych danych sterownika.",
+      "profile_no_removal": "Zaznacz co najmniej jedną nastawę do usunięcia.",
+      "profile_boiler_limit": "Temperatura zadana kotła przekracza limit integracji."
+    },
+    "progress": {
+      "profile_apply": "Wysyłanie nastaw do sterownika…\n\nNie zamykaj okna podczas wysyłania."
     }
   },
   "exceptions": {
@@ -466,7 +594,7 @@
       "message": "Nie można wysłać polecenia. Brak połączenia lub aktualnych danych ze sterownika."
     },
     "missing_command_credentials": {
-      "message": "Nie można wysłać polecenia, ponieważ ramka sterownika nie zawiera: {fields}."
+      "message": "Brakuje danych wymaganych do wysłania polecenia: {fields}."
     },
     "command_send_failed": {
       "message": "Nie udało się wysłać polecenia do sterownika SKZP: {error}."
@@ -475,13 +603,16 @@
       "message": "Sterownik nie potwierdził zmiany {parameter} na {value} po wykorzystaniu wszystkich prób. W Home Assistant przywrócono ostatnią znaną wartość."
     },
     "initial_data_timeout": {
-      "message": "Nie odebrano kompletnej ramki danych ze sterownika {host}:{port} w ciągu {seconds} s. Home Assistant automatycznie ponowi konfigurację."
+      "message": "Nie odebrano prawidłowych danych ze sterownika {host}:{port} w ciągu {seconds} s. Próba zostanie ponowiona automatycznie."
     },
     "unsupported_model": {
       "message": "Nieobsługiwany model sterownika: {model}."
     },
     "command_send_timeout": {
       "message": "Przekroczono czas oczekiwania podczas wysyłania polecenia do sterownika."
+    },
+    "profile_busy": {
+      "message": "Trwa wysyłanie innego polecenia lub profilu. Spróbuj ponownie po zakończeniu."
     }
   },
   "entity": {
@@ -591,134 +722,50 @@
       "buffer_hysteresis": {
         "name": "Bufor Histereza"
       },
-      "ch1_mixer_opening_min": {
-        "name": "CO1 Mieszacz Otwarcie min."
+      "ch_mixer_opening_min": {
+        "name": "CO{number} Mieszacz Otwarcie min."
       },
-      "ch1_mixer_opening_max": {
-        "name": "CO1 Mieszacz Otwarcie maks."
+      "ch_mixer_opening_max": {
+        "name": "CO{number} Mieszacz Otwarcie maks."
       },
-      "ch1_mixer_gain": {
-        "name": "CO1 Mieszacz Wzmocnienie"
+      "ch_mixer_gain": {
+        "name": "CO{number} Mieszacz Wzmocnienie"
       },
-      "ch1_mixer_stabilization_time": {
-        "name": "CO1 Mieszacz Czas stabilizacji"
+      "ch_mixer_stabilization_time": {
+        "name": "CO{number} Mieszacz Czas stabilizacji"
       },
-      "ch1_mixer_temp_setpoint": {
-        "name": "CO1 Mieszacz Temp. zadana"
+      "ch_mixer_temp_setpoint": {
+        "name": "CO{number} Mieszacz Temp. zadana"
       },
-      "ch1_return_temp_min": {
-        "name": "CO1 Powrót Temp. min."
+      "ch_return_temp_min": {
+        "name": "CO{number} Powrót Temp. min."
       },
-      "ch1_mixer_temp_min": {
-        "name": "CO1 Mieszacz Temp. min."
+      "ch_mixer_temp_min": {
+        "name": "CO{number} Mieszacz Temp. min."
       },
-      "ch1_mixer_temp_max": {
-        "name": "CO1 Mieszacz Temp. maks."
+      "ch_mixer_temp_max": {
+        "name": "CO{number} Mieszacz Temp. maks."
       },
-      "ch1_mixer_temp_reduction": {
-        "name": "CO1 Mieszacz Temp. obniżenia"
+      "ch_mixer_temp_reduction": {
+        "name": "CO{number} Mieszacz Temp. obniżenia"
       },
-      "ch1_room_comfort_temp": {
-        "name": "CO1 Reg. pokojowy Temp. komfortowa"
+      "ch_room_comfort_temp": {
+        "name": "CO{number} Reg. pokojowy Temp. komfortowa"
       },
-      "ch1_room_eco_temp": {
-        "name": "CO1 Reg. pokojowy Temp. ekonomiczna"
+      "ch_room_eco_temp": {
+        "name": "CO{number} Reg. pokojowy Temp. ekonomiczna"
       },
-      "ch1_room_hysteresis": {
-        "name": "CO1 Reg. pokojowy Histereza"
+      "ch_room_hysteresis": {
+        "name": "CO{number} Reg. pokojowy Histereza"
       },
-      "ch1_weather_correction": {
-        "name": "CO1 Reg. pogodowy Korekta"
+      "ch_weather_correction": {
+        "name": "CO{number} Reg. pogodowy Korekta"
       },
-      "ch1_weather_stop_temp": {
-        "name": "CO1 Reg. pogodowy Temp. wył. obwodu"
-      },
-      "ch2_mixer_opening_min": {
-        "name": "CO2 Mieszacz Otwarcie min."
-      },
-      "ch2_mixer_opening_max": {
-        "name": "CO2 Mieszacz Otwarcie maks."
-      },
-      "ch2_mixer_gain": {
-        "name": "CO2 Mieszacz Wzmocnienie"
-      },
-      "ch2_mixer_stabilization_time": {
-        "name": "CO2 Mieszacz Czas stabilizacji"
-      },
-      "ch2_mixer_temp_setpoint": {
-        "name": "CO2 Mieszacz Temp. zadana"
-      },
-      "ch2_mixer_temp_min": {
-        "name": "CO2 Mieszacz Temp. min."
-      },
-      "ch2_mixer_temp_max": {
-        "name": "CO2 Mieszacz Temp. maks."
-      },
-      "ch2_mixer_temp_reduction": {
-        "name": "CO2 Mieszacz Temp. obniżenia"
-      },
-      "ch2_room_comfort_temp": {
-        "name": "CO2 Reg. pokojowy Temp. komfortowa"
-      },
-      "ch2_room_eco_temp": {
-        "name": "CO2 Reg. pokojowy Temp. ekonomiczna"
-      },
-      "ch2_room_hysteresis": {
-        "name": "CO2 Reg. pokojowy Histereza"
-      },
-      "ch2_weather_correction": {
-        "name": "CO2 Reg. pogodowy Korekta"
-      },
-      "ch2_weather_stop_temp": {
-        "name": "CO2 Reg. pogodowy Temp. wył. obwodu"
-      },
-      "ch3_mixer_opening_min": {
-        "name": "CO3 Mieszacz Otwarcie min."
-      },
-      "ch3_mixer_opening_max": {
-        "name": "CO3 Mieszacz Otwarcie maks."
-      },
-      "ch3_mixer_gain": {
-        "name": "CO3 Mieszacz Wzmocnienie"
-      },
-      "ch3_mixer_stabilization_time": {
-        "name": "CO3 Mieszacz Czas stabilizacji"
-      },
-      "ch3_mixer_temp_setpoint": {
-        "name": "CO3 Mieszacz Temp. zadana"
-      },
-      "ch3_mixer_temp_min": {
-        "name": "CO3 Mieszacz Temp. min."
-      },
-      "ch3_mixer_temp_max": {
-        "name": "CO3 Mieszacz Temp. maks."
-      },
-      "ch3_mixer_temp_reduction": {
-        "name": "CO3 Mieszacz Temp. obniżenia"
-      },
-      "ch3_room_comfort_temp": {
-        "name": "CO3 Reg. pokojowy Temp. komfortowa"
-      },
-      "ch3_room_eco_temp": {
-        "name": "CO3 Reg. pokojowy Temp. ekonomiczna"
-      },
-      "ch3_room_hysteresis": {
-        "name": "CO3 Reg. pokojowy Histereza"
-      },
-      "ch3_weather_correction": {
-        "name": "CO3 Reg. pogodowy Korekta"
-      },
-      "ch3_weather_stop_temp": {
-        "name": "CO3 Reg. pogodowy Temp. wył. obwodu"
+      "ch_weather_stop_temp": {
+        "name": "CO{number} Reg. pogodowy Temp. wył. obwodu"
       },
       "weather_correction": {
         "name": "Reg. pogodowy Korekta"
-      },
-      "weather_stop_temp_ch1": {
-        "name": "CO1 Reg. pogodowy Temp. wył. obwodu"
-      },
-      "weather_stop_temp_ch2": {
-        "name": "CO2 Reg. pogodowy Temp. wył. obwodu"
       }
     },
     "switch": {
@@ -731,17 +778,11 @@
       "dhwc_always_on": {
         "name": "Cyrk. CWU Zawsze wł."
       },
-      "ch1_return_protection": {
-        "name": "CO1 Powrót Ochrona"
+      "ch_return_protection": {
+        "name": "CO{number} Powrót Ochrona"
       },
-      "ch1_mixer": {
-        "name": "CO1 Mieszacz"
-      },
-      "ch2_mixer": {
-        "name": "CO2 Mieszacz"
-      },
-      "ch3_mixer": {
-        "name": "CO3 Mieszacz"
+      "ch_mixer": {
+        "name": "CO{number} Mieszacz"
       },
       "device_power": {
         "name": "Sterownik"
@@ -779,50 +820,16 @@
           "timer": "Program czasowy"
         }
       },
-      "ch1_mode": {
-        "name": "CO1 Tryb pracy",
+      "ch_mode": {
+        "name": "CO{number} Tryb pracy",
         "state": {
           "off": "Wyłączony",
           "active": "Aktywny",
           "timer": "Program czasowy"
         }
       },
-      "ch1_room_mode": {
-        "name": "CO1 Reg. pokojowy Tryb pracy",
-        "state": {
-          "off": "Wyłączony",
-          "economy": "Temp. Ekonomiczna",
-          "comfort": "Temp. Komfortowa",
-          "timer": "Program czasowy"
-        }
-      },
-      "ch2_mode": {
-        "name": "CO2 Tryb pracy",
-        "state": {
-          "off": "Wyłączony",
-          "active": "Aktywny",
-          "timer": "Program czasowy"
-        }
-      },
-      "ch2_room_mode": {
-        "name": "CO2 Reg. pokojowy Tryb pracy",
-        "state": {
-          "off": "Wyłączony",
-          "economy": "Temp. Ekonomiczna",
-          "comfort": "Temp. Komfortowa",
-          "timer": "Program czasowy"
-        }
-      },
-      "ch3_mode": {
-        "name": "CO3 Tryb pracy",
-        "state": {
-          "off": "Wyłączony",
-          "active": "Aktywny",
-          "timer": "Program czasowy"
-        }
-      },
-      "ch3_room_mode": {
-        "name": "CO3 Reg. pokojowy Tryb pracy",
+      "ch_room_mode": {
+        "name": "CO{number} Reg. pokojowy Tryb pracy",
         "state": {
           "off": "Wyłączony",
           "economy": "Temp. Ekonomiczna",
@@ -851,7 +858,7 @@
           }
         }
       },
-      "alarmslist": {
+      "active_alarms": {
         "name": "Aktywne alarmy",
         "state_attributes": {
           "aktywne_alarmy": {
@@ -859,7 +866,7 @@
           }
         }
       },
-      "devstatus_mode": {
+      "controller_status": {
         "name": "Status",
         "state": {
           "standby": "Czuwanie",
@@ -884,138 +891,102 @@
       "uptime": {
         "name": "Czas od resetu"
       },
-      "boilertempact": {
+      "boiler_temp_current": {
         "name": "Kocioł Temp. aktualna"
       },
-      "ch1returntempact": {
+      "boiler_return_temp": {
         "name": "Kocioł Temp. powrotu"
       },
-      "butempact": {
+      "burner_temp": {
         "name": "Palnik Temp."
       },
-      "exhausttempact": {
+      "exhaust_temp": {
         "name": "Kocioł Temp. spalin"
       },
-      "an01": {
+      "oxygen": {
         "name": "Analizator Tlen"
       },
-      "buphotoact": {
+      "flame_sensor": {
         "name": "Palnik Foto"
       },
-      "k003": {
+      "boiler_reduced_setpoint": {
         "name": "Kocioł Temp. obniżenia"
       },
-      "devstatus_power": {
+      "boiler_power_current": {
         "name": "Kocioł Moc"
       },
-      "devstatus_fan": {
+      "fan_power": {
         "name": "Wentylator Moc"
       },
-      "b060": {
+      "fuel_capacity": {
         "name": "Paliwo Pojemność zasobnika"
       },
-      "b062": {
+      "fuel_remaining": {
         "name": "Paliwo Pozostałe"
       },
-      "butotalfuel": {
+      "fuel_consumption_total": {
         "name": "Zużycie całkowite"
       },
-      "bu24hfuel": {
+      "fuel_consumption_daily": {
         "name": "Zużycie dobowe"
       },
-      "buactualfuel": {
+      "fuel_consumption_rate": {
         "name": "Zużycie chwilowe"
       },
-      "bufuelcaloric": {
+      "fuel_caloric": {
         "name": "Paliwo Kaloryczność"
       },
-      "dhwtempact": {
+      "dhw_temp_current": {
         "name": "CWU Temp. aktualna"
       },
-      "weatempact": {
+      "outdoor_temp": {
         "name": "Temp. zewnętrzna"
       },
-      "d201": {
+      "buffer_temp_top": {
         "name": "Bufor Temp. góra"
       },
-      "d202": {
+      "buffer_temp_bottom": {
         "name": "Bufor Temp. dół"
       },
-      "d203": {
+      "buffer_temp_setpoint": {
         "name": "Bufor Temp. zadana"
       },
-      "d204": {
+      "buffer_hysteresis": {
         "name": "Bufor Histereza"
       },
-      "ch1_mixer_supply_temp": {
-        "name": "CO1 Mieszacz Temp. zasilania"
+      "ch_mixer_supply_temp": {
+        "name": "CO{number} Mieszacz Temp. zasilania"
       },
-      "c007": {
-        "name": "CO1 Mieszacz Temp. docelowa"
+      "ch_mixer_target_temp": {
+        "name": "CO{number} Mieszacz Temp. docelowa"
       },
-      "ch1_mixer_opening": {
-        "name": "CO1 Mieszacz Otwarcie"
+      "ch_mixer_opening": {
+        "name": "CO{number} Mieszacz Otwarcie"
       },
-      "ch1_room_temp": {
-        "name": "CO1 Reg. pokojowy Temp. pokojowa"
+      "ch_room_temp": {
+        "name": "CO{number} Reg. pokojowy Temp. pokojowa"
       },
-      "ch1_room_target_temp": {
-        "name": "CO1 Reg. pokojowy Temp. docelowa"
-      },
-      "c106": {
-        "name": "CO2 Mieszacz Temp. zasilania"
-      },
-      "c107": {
-        "name": "CO2 Mieszacz Temp. docelowa"
-      },
-      "c101": {
-        "name": "CO2 Mieszacz Otwarcie"
-      },
-      "c108": {
-        "name": "CO2 Reg. pokojowy Temp. pokojowa"
-      },
-      "c109": {
-        "name": "CO2 Reg. pokojowy Temp. docelowa"
-      },
-      "c206": {
-        "name": "CO3 Mieszacz Temp. zasilania"
-      },
-      "c207": {
-        "name": "CO3 Mieszacz Temp. docelowa"
-      },
-      "c201": {
-        "name": "CO3 Mieszacz Otwarcie"
-      },
-      "c208": {
-        "name": "CO3 Reg. pokojowy Temp. pokojowa"
-      },
-      "c209": {
-        "name": "CO3 Reg. pokojowy Temp. docelowa"
+      "ch_room_target_temp": {
+        "name": "CO{number} Reg. pokojowy Temp. docelowa"
       }
     },
     "binary_sensor": {
-      "devstatus_outfeeder": {
+      "feeder": {
         "name": "Podajnik"
       },
-      "devstatus_outch1": {
-        "name": "CO1 Pompa"
+      "ch_pump": {
+        "name": "CO{number} Pompa"
       },
-      "devstatus_outch2": {
-        "name": "CO2 Pompa"
-      },
-      "devstatus_outdhw": {
+      "dhw_pump": {
         "name": "CWU Pompa"
       },
-      "devstatus_outcirc": {
+      "dhwc_pump": {
         "name": "Cyrk. CWU Pompa"
       },
-      "devstatus_outch3": {
-        "name": "CO3 Pompa"
-      },
-      "devstatus_outbuffer": {
+      "buffer_pump": {
         "name": "Bufor Pompa"
       },
-      "devstatus_outheater": {
+      "heater": {
         "name": "Grzałka"
       }
     }
@@ -1023,156 +994,87 @@
   "selector": {
     "entity_selection": {
       "options": {
-        "number_fuel_caloric": "Kaloryczność",
-        "number_boiler_temp_setpoint": "Temp. zadana",
-        "number_boiler_hysteresis": "Histereza",
-        "number_boiler_temp_reduction": "Wartość obniżenia temp.",
-        "number_no_fire_time": "Czas wygaszania",
-        "number_clean_period": "Czyszczenie co",
-        "number_clean_time": "Czas czyszczenia",
-        "number_modulation_min": "Min. moc kotła",
-        "number_modulation_max": "Maks. moc kotła",
-        "number_modulation_dynamics": "Dynamika",
-        "number_overtemp_time": "Czas przekroczenia temp.",
-        "number_fuel_correction": "Korekta dawki",
-        "number_exhaust_temp_max": "Temp. spalin maks.",
-        "number_standby_feed_time": "Podawanie",
-        "number_standby_period": "Przerwa",
-        "number_standby_air": "Powietrze",
-        "number_standby_air_time": "Czas nadmuchu",
-        "number_standby_exit_time": "Wyjście z czuwania",
-        "number_air_min": "Min. (10% mocy)",
-        "number_air_max": "Maks. (100% mocy)",
-        "number_feed_air_boost": "Dodatkowe przy podawaniu",
-        "number_interval_feed_time": "Podawanie",
-        "number_interval_break_time": "Przerwa",
-        "number_interval_air": "Powietrze",
-        "number_feeder_efficiency": "Potencjał",
-        "number_max_feed_time": "Podawanie maks.",
-        "number_boiler_power": "Moc znamionowa (kW)",
-        "number_dhw_temp_setpoint": "Temp. zadana",
-        "number_dhw_hysteresis": "Histereza",
-        "number_dhw_overshoot": "Nadwyżka temp. kotła",
-        "number_dhwc_temp_on": "Temp. załączenia",
-        "number_dhwc_work_time": "Praca",
-        "number_dhwc_break_time": "Przerwa",
-        "number_buffer_temp_setpoint": "Temp. zadana",
-        "number_buffer_hysteresis": "Histereza",
-        "number_ch1_mixer_opening_min": "Otwarcie min.",
-        "number_ch1_mixer_opening_max": "Otwarcie maks.",
-        "number_ch1_mixer_gain": "Wzmocnienie",
-        "number_ch1_mixer_stabilization_time": "Czas stabilizacji",
-        "number_ch1_mixer_temp_setpoint": "Zadana",
-        "number_ch1_mixer_temp_min": "Minimalna",
-        "number_ch1_mixer_temp_max": "Maksymalna",
-        "number_ch1_mixer_temp_reduction": "Obniżenia",
-        "number_ch1_room_comfort_temp": "Temp. komfortowa",
-        "number_ch1_room_eco_temp": "Temp. ekonomiczna",
-        "number_ch1_room_hysteresis": "Histereza",
-        "number_ch1_weather_correction": "Korekta",
-        "number_ch1_weather_stop_temp": "Temp. wyłączenia obiegu",
-        "number_ch2_mixer_opening_min": "Otwarcie min.",
-        "number_ch2_mixer_opening_max": "Otwarcie maks.",
-        "number_ch2_mixer_gain": "Wzmocnienie",
-        "number_ch2_mixer_stabilization_time": "Czas stabilizacji",
-        "number_ch2_mixer_temp_setpoint": "Zadana",
-        "number_ch2_mixer_temp_min": "Minimalna",
-        "number_ch2_mixer_temp_max": "Maksymalna",
-        "number_ch2_mixer_temp_reduction": "Obniżenia",
-        "number_ch2_room_comfort_temp": "Temp. komfortowa",
-        "number_ch2_room_eco_temp": "Temp. ekonomiczna",
-        "number_ch2_room_hysteresis": "Histereza",
-        "number_ch2_weather_correction": "Korekta",
-        "number_ch2_weather_stop_temp": "Temp. wyłączenia obiegu",
-        "number_ch3_mixer_opening_min": "Otwarcie min.",
-        "number_ch3_mixer_opening_max": "Otwarcie maks.",
-        "number_ch3_mixer_gain": "Wzmocnienie",
-        "number_ch3_mixer_stabilization_time": "Czas stabilizacji",
-        "number_ch3_mixer_temp_setpoint": "Zadana",
-        "number_ch3_mixer_temp_min": "Minimalna",
-        "number_ch3_mixer_temp_max": "Maksymalna",
-        "number_ch3_mixer_temp_reduction": "Obniżenia",
-        "number_ch3_room_comfort_temp": "Temp. komfortowa",
-        "number_ch3_room_eco_temp": "Temp. ekonomiczna",
-        "number_ch3_room_hysteresis": "Histereza",
-        "number_ch3_weather_correction": "Korekta",
-        "number_ch3_weather_stop_temp": "Temp. wyłączenia obiegu",
-        "number_weather_correction": "Korekta",
-        "number_weather_stop_temp_ch1": "Temp. wyłączenia obiegu",
-        "number_weather_stop_temp_ch2": "Temp. wyłączenia obiegu",
-        "switch_buffer": "Włącz/wyłącz",
-        "switch_dhw_priority": "Priorytet włącz/wyłącz",
-        "switch_dhwc_always_on": "Zawsze wł.",
-        "number_ch1_return_temp_min": "Temp. min.",
-        "switch_ch1_return_protection": "Włącz/wyłącz",
-        "switch_ch1_mixer": "Włącz/wyłącz",
-        "switch_ch2_mixer": "Włącz/wyłącz",
-        "switch_ch3_mixer": "Włącz/wyłącz",
-        "select_burner_mode": "Tryb pracy",
-        "select_dhw_mode": "Tryb pracy",
-        "select_dhwc_mode": "Tryb pracy",
-        "select_boiler_mode": "Tryb pracy",
-        "select_ch1_mode": "Tryb pracy",
-        "select_ch1_room_mode": "Tryb pracy",
-        "select_ch2_mode": "Tryb pracy",
-        "select_ch2_room_mode": "Tryb pracy",
-        "select_ch3_mode": "Tryb pracy",
-        "select_ch3_room_mode": "Tryb pracy",
-        "sensor_boilertempact": "Temp. kotła aktualna",
-        "sensor_ch1returntempact": "Temp. powrotu",
-        "sensor_butempact": "Temp. palnika",
-        "sensor_exhausttempact": "Temp. spalin",
-        "sensor_an01": "Tlen",
-        "sensor_buphotoact": "Foto",
-        "sensor_k003": "Temp. zadana po obniżeniu",
-        "sensor_devstatus_power": "Moc kotła",
-        "sensor_devstatus_fan": "Moc wentylatora",
-        "sensor_b060": "Pojemność zasobnika",
-        "sensor_b062": "Pozostałe",
-        "sensor_butotalfuel": "Zużycie całkowite",
-        "sensor_bu24hfuel": "Zużycie dobowe",
-        "sensor_buactualfuel": "Zużycie chwilowe",
-        "sensor_bufuelcaloric": "Kaloryczność",
-        "sensor_dhwtempact": "Temp. aktualna",
-        "sensor_weatempact": "Temp. zewnętrzna",
-        "sensor_d201": "Temp. góra",
-        "sensor_d202": "Temp. dół",
-        "sensor_d203": "Temp. zadana",
-        "sensor_d204": "Histereza",
-        "sensor_ch1_mixer_supply_temp": "Temp. zasilania",
-        "sensor_c007": "Temp. docelowa",
-        "sensor_ch1_mixer_opening": "Otwarcie",
-        "sensor_ch1_room_temp": "Temp. pokojowa",
-        "sensor_ch1_room_target_temp": "Temp. docelowa",
-        "sensor_c106": "Temp. zasilania",
-        "sensor_c107": "Temp. docelowa",
-        "sensor_c101": "Otwarcie",
-        "sensor_c108": "Temp. pokojowa",
-        "sensor_c109": "Temp. docelowa",
-        "sensor_c206": "Temp. zasilania",
-        "sensor_c207": "Temp. docelowa",
-        "sensor_c201": "Otwarcie",
-        "sensor_c208": "Temp. pokojowa",
-        "sensor_c209": "Temp. docelowa",
-        "binary_sensor_devstatus_outfeeder": "Podajnik włączony/wyłączony",
-        "binary_sensor_devstatus_outch1": "Pompa włączona/wyłączona",
-        "binary_sensor_devstatus_outch2": "Pompa włączona/wyłączona",
-        "binary_sensor_devstatus_outdhw": "Pompa włączona/wyłączona",
-        "binary_sensor_devstatus_outcirc": "Pompa włączona/wyłączona",
-        "binary_sensor_devstatus_outch3": "Pompa włączona/wyłączona",
-        "binary_sensor_devstatus_outbuffer": "Pompa włączona/wyłączona",
-        "binary_sensor_devstatus_outheater": "Grzałka włączona/wyłączona"
+        "fuel_caloric": "Kaloryczność",
+        "temp_setpoint": "Temp. zadana",
+        "hysteresis": "Histereza",
+        "boiler_temp_reduction": "Wartość obniżenia temp.",
+        "no_fire_time": "Czas wygaszania",
+        "clean_period": "Czyszczenie co",
+        "clean_time": "Czas czyszczenia",
+        "modulation_min": "Min. moc kotła",
+        "modulation_max": "Maks. moc kotła",
+        "modulation_dynamics": "Dynamika",
+        "overtemp_time": "Czas przekroczenia temp.",
+        "fuel_correction": "Korekta dawki",
+        "exhaust_temp_max": "Temp. spalin maks.",
+        "feed_time": "Podawanie",
+        "break_time": "Przerwa",
+        "air": "Powietrze",
+        "standby_air_time": "Czas nadmuchu",
+        "standby_exit_time": "Wyjście z czuwania",
+        "air_min": "Min. (10% mocy)",
+        "air_max": "Maks. (100% mocy)",
+        "feed_air_boost": "Dodatkowe przy podawaniu",
+        "feeder_efficiency": "Potencjał",
+        "max_feed_time": "Podawanie maks.",
+        "boiler_power": "Moc znamionowa (kW)",
+        "dhw_overshoot": "Nadwyżka temp. kotła",
+        "dhwc_temp_on": "Temp. załączenia",
+        "dhwc_work_time": "Praca",
+        "mixer_opening_min": "Otwarcie min.",
+        "mixer_opening_max": "Otwarcie maks.",
+        "mixer_gain": "Wzmocnienie",
+        "mixer_stabilization_time": "Czas stabilizacji",
+        "mixer_temp_setpoint": "Zadana",
+        "mixer_temp_min": "Minimalna",
+        "mixer_temp_max": "Maksymalna",
+        "mixer_temp_reduction": "Obniżenia",
+        "room_comfort_temp": "Temp. komfortowa",
+        "room_eco_temp": "Temp. ekonomiczna",
+        "weather_correction": "Korekta",
+        "weather_stop_temp": "Temp. wyłączenia obiegu",
+        "enabled": "Włącz/wyłącz",
+        "dhw_priority": "Priorytet włącz/wyłącz",
+        "dhwc_always_on": "Zawsze wł.",
+        "return_temp_min": "Temp. min.",
+        "work_mode": "Tryb pracy",
+        "boiler_temp_current": "Temp. kotła aktualna",
+        "boiler_return_temp": "Temp. powrotu",
+        "burner_temp": "Temp. palnika",
+        "exhaust_temp": "Temp. spalin",
+        "oxygen": "Tlen",
+        "flame_sensor": "Foto",
+        "boiler_reduced_setpoint": "Temp. zadana po obniżeniu",
+        "boiler_power_current": "Moc kotła",
+        "fan_power": "Moc wentylatora",
+        "fuel_capacity": "Pojemność zasobnika",
+        "fuel_remaining": "Pozostałe",
+        "fuel_consumption_total": "Zużycie całkowite",
+        "fuel_consumption_daily": "Zużycie dobowe",
+        "fuel_consumption_rate": "Zużycie chwilowe",
+        "dhw_temp_current": "Temp. aktualna",
+        "outdoor_temp": "Temp. zewnętrzna",
+        "buffer_temp_top": "Temp. góra",
+        "buffer_temp_bottom": "Temp. dół",
+        "mixer_supply_temp": "Temp. zasilania",
+        "target_temperature": "Temp. docelowa",
+        "mixer_opening": "Otwarcie",
+        "room_temp": "Temp. pokojowa",
+        "feeder": "Podajnik włączony/wyłączony",
+        "pump_state": "Pompa włączona/wyłączona",
+        "heater": "Grzałka włączona/wyłączona"
       }
     }
   },
   "common": {
     "controller_name": "Sterownik {model}",
+    "firmware_version": "Wersja oprogramowania: {version}",
     "no_alarms": "Brak alarmów",
     "active_alarm_count": "Aktywne alarmy: {count}",
     "state_on": "włączony",
     "state_off": "wyłączony",
     "connection_lost_title": "Brak komunikacji ze sterownikiem SKZP",
-    "connection_lost_message": "Nie odebrano nowych danych ze sterownika przez co najmniej {seconds} sekund. Sprawdź połączenie ze sterownikiem {host}:{port}.",
+    "connection_lost_message": "Nie odebrano prawidłowych danych ze sterownika {host}:{port} przez co najmniej {seconds} s. Sprawdź połączenie.",
     "connection_restored_title": "Przywrócono komunikację ze sterownikiem SKZP",
     "connection_restored_message": "Sterownik {host}:{port} ponownie przesyła dane.",
     "alarm_no_fuel": "Brak paliwa",
@@ -1189,6 +1091,61 @@
     "alarm_piston_blocked": "Blokada tłoka",
     "alarm_ignition_failed": "Błąd rozpalania",
     "alarm_low_fuel": "Niski poziom paliwa",
-    "alarm_high_boiler_temp": "Wysoka temperatura kotła"
+    "alarm_high_boiler_temp": "Wysoka temperatura kotła",
+    "profile_on": "Włączony",
+    "profile_off": "Wyłączony",
+    "profile_skip_unsupported": "nieobsługiwany parametr",
+    "profile_skip_invalid_value": "niepoprawna wartość lub tryb",
+    "profile_skip_out_of_range": "wartość poza dozwolonym zakresem",
+    "profile_skip_duplicate": "powtórzona nastawa",
+    "profile_skipped": "Pominięte parametry:",
+    "profile_result_saved": "Zapisane",
+    "profile_result_failed": "Niepotwierdzone",
+    "profile_result_remaining": "Niewysłane",
+    "profile_download_label": "Pobierz plik",
+    "profile_back": "← Wróć",
+    "profile_value_difference": "Sterownik: {current} · Profil: {profile}",
+    "profile_result_count": "Zapisano nastaw: {count} z {total}.",
+    "profile_page_boiler_burner": "Kocioł / Palnik",
+    "profile_page_dhw_buffer": "CWU / Bufor",
+    "profile_page_dhw": "CWU",
+    "profile_page_circuit": "Obieg CO{number}",
+    "profile_updated": "Ostatnia aktualizacja: {date}",
+    "profile_compare_file": "Profil: {saved} · Plik: {incoming}",
+    "profile_compare_controller": "Profil: {saved} · Sterownik: {incoming}",
+    "profile_value_new": "brak nastawy",
+    "profile_table_setting": "Nastawa",
+    "profile_table_value": "Wartość",
+    "profile_select_new": "Wybierz nastawy do zapisania",
+    "profile_select_update": "Wybierz nastawy do aktualizacji",
+    "profile_saved_value": "Zapisana wartość: {value}",
+    "profile_value_range": "Zakres: {value}",
+    "profile_removed_settings": "Nastawy do usunięcia z profilu",
+    "profile_settings_to_save": "Nastawy do zapisania",
+    "profile_settings_to_update": "Nastawy do aktualizacji",
+    "profile_settings_to_send": "Nastawy do wysłania",
+    "profile_table_on": "Wł.",
+    "profile_table_off": "Wył.",
+    "profile_save_new": "Utwórz profil z nastaw sterownika.",
+    "profile_save_existing": "Utwórz lub aktualizuj profil z nastaw sterownika.",
+    "profile_import_new": "Utwórz profil z pliku.",
+    "profile_import_existing": "Utwórz lub aktualizuj profil z pliku.",
+    "profile_matches_controller": "Profil jest zgodny z aktualnymi nastawami sterownika.",
+    "profile_matches_file": "Profil jest zgodny z nastawami z pliku.",
+    "profile_no_changes": "Brak nastaw wymagających aktualizacji.",
+    "profile_skip_schedule": "nieobsługiwany harmonogram",
+    "profile_skip_read_only": "parametr tylko do odczytu",
+    "profile_skip_details": "Szczegóły techniczne",
+    "profile_skip_group_schedule": "Harmonogramy ({count}) — obecnie nieobsługiwane.",
+    "profile_skip_group_read_only": "Parametry tylko do odczytu ({count}).",
+    "profile_skip_group_unsupported": "Nieobsługiwane parametry ({count}) — brak obsługi w integracji.",
+    "profile_skip_group_invalid_value": "Nieprawidłowe wartości lub tryby ({count}).",
+    "profile_skip_group_out_of_range": "Wartości poza zakresem ({count}).",
+    "profile_skip_group_duplicate": "Powtórzone nastawy ({count}).",
+    "profile_select_send": "Wybierz nastawy",
+    "profile_edit_title": "Edytuj nastawy",
+    "profile_send_description": "Profil: {name}\n\nZaznacz nastawy do wysłania.{skipped}",
+    "profile_write_description": "Zaznacz nastawy do zapisania w profilu.{skipped}",
+    "profile_edit_description": "Profil: {name}\n\nZmień nastawy zapisane w profilu.{skipped}"
   }
 }

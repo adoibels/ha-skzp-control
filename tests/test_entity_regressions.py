@@ -1,16 +1,75 @@
 import ast
 import asyncio
+import logging
 import time
 import unittest
 from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock
 from support import ROOT as root, HAError
 from skzp_control.client.command_manager import CommandManager
+from skzp_control.coordinator import SkzpCoordinator
 from skzp_control.pending_change import PendingChangeMixin
+from helpers import load_function
 
 class FakeEntity(PendingChangeMixin, SimpleNamespace):
     pass
 
 class EntityRegressions(unittest.IsolatedAsyncioTestCase):
+    async def test_one_sent_or_resent_log_per_successful_write_all_platforms(self):
+        cases = (
+            ('number.py', 'async_set_native_value', 10, dict(
+                _confirmed_value=1, _attr_native_value=1, _number_send_delay=0, _key='x',
+                _last_controller_value=None, _validate_min_max_pair=lambda _: None,
+                _command_value=lambda value: value, _round=lambda value: value,
+                _format_value=str)),
+            ('select.py', 'async_select_option', 'active', dict(
+                _modes={'active': 1}, _confirmed_option='off', _attr_current_option='off',
+                _data_key='x', _last_controller_option=None)),
+            ('switch.py', '_send_optimistic_command', True, dict(
+                _confirmed_state=False, _attr_is_on=False, _last_controller_state=None)),
+        )
+        for filename, method, value, attrs in cases:
+            logger = logging.getLogger('skzp_control.' + filename[:-3])
+            operation = load_function(filename, method, dict(
+                asyncio=asyncio, HomeAssistantError=HAError, _LOGGER=logger,
+                resolve_parameter_write_key=lambda *_args: 'x', DOMAIN='skzp_control'))
+            for outcome in ('first', 'retry', 'failed_write'):
+                with self.subTest(platform=filename, outcome=outcome):
+                    client = SimpleNamespace(
+                        command_manager=CommandManager(), command_retry_delay=0,
+                        command_retry_count=1, command_pending_timeout=11,
+                        data={}, host='host', port=1, translate=lambda key, **_kwargs: key,
+                        send_command=AsyncMock())
+                    client.log_command_sent = SkzpCoordinator.log_command_sent.__get__(client)
+                    entity = FakeEntity(**attrs, _client=client, _attr_translation_key='sample',
+                        _attr_translation_placeholders={},
+                        async_write_ha_state=lambda: None, _apply_optimistic_state=lambda _: None)
+                    entity._init_pending_change()
+                    entity._async_wait_for_confirmation = AsyncMock(
+                        side_effect=[True] if outcome == 'first' else [False, True])
+                    if outcome == 'failed_write':
+                        client.send_command.side_effect = HAError(translation_key='not_connected')
+                    for name in ('_restore_controller_value', '_restore_controller_option', '_restore_controller_state'):
+                        setattr(entity, name, Mock())
+                    args = (entity, value, {'x': '1'}) if filename == 'switch.py' else (entity, value)
+                    if outcome == 'failed_write':
+                        with self.assertNoLogs('skzp_control', level='DEBUG'):
+                            with self.assertRaises(HAError):
+                                await operation(*args)
+                        messages, records = [], []
+                    else:
+                        with self.assertLogs('skzp_control', level='DEBUG') as logs:
+                            await operation(*args)
+                        records = logs.records
+                        messages = [record.getMessage() for record in records]
+                    self.assertEqual(sum('Command sent:' in text for text in messages),
+                                     0 if outcome == 'failed_write' else 1)
+                    self.assertEqual(sum('Command resent:' in text for text in messages),
+                                     1 if outcome == 'retry' else 0)
+                    self.assertTrue(all(record.levelname == 'DEBUG' for record in records))
+                    self.assertIsNone(entity._confirmation_event)
+                    self.assertFalse(client.pending_entities)
+
     async def test_error_and_cancel_restore_all_platforms(self):
         # Sprawdź obsługę błędu i anulowania na metodach rzeczywistych encji.
         for filename, method, argument, attrs in (

@@ -210,16 +210,10 @@ def disabled_entities_from_page(
     """Aktualizuje wybór encji tylko dla zapisanego ekranu."""
     current_page_choices = page_choices(choices, page)
     available_ids = {choice.selection_id for choice in current_page_choices}
-    selected_options: set[str] = set()
-    for section_name in SECTION_ORDER:
-        section_data = user_input.get(section_name, {})
-        for field in _ordered_fields(current_page_choices, section_name):
-            selected_options.update(section_data.get(field, []))
-
     selected_ids = {
         choice.selection_id
         for choice in current_page_choices
-        if choice.option_id in selected_options
+        if choice.option_id in user_input.get(choice.section, {}).get(choice.field, [])
     }
     disabled = previous_disabled - available_ids
     disabled.update(available_ids - selected_ids)

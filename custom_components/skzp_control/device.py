@@ -52,9 +52,12 @@ def detect_device_model(dev_type: Any) -> str:
     )
 
 
-def detect_firmware_version(dev_type: Any) -> str | None:
-    """Zwraca wersję i datę oprogramowania z DevType."""
+def detect_firmware_version(dev_type: Any, *, include_date: bool = True) -> str | None:
+    """Zwraca wersję oprogramowania z DevType, opcjonalnie z datą."""
     match = _FIRMWARE_RE.search(str(dev_type))
+    if not include_date:
+        match = match or _FIRMWARE_VERSION_RE.search(str(dev_type))
+        return match["version"] if match else None
     if not match:
         return None
     return f"{match['version']} ({match['date']})"

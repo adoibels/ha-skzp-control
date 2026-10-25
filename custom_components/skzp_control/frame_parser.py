@@ -8,13 +8,22 @@ from typing import Any
 _LOGGER = logging.getLogger(__name__)
 
 
+class InvalidFrameError(ValueError):
+    """Odebrano niepoprawny JSON lub tekst UTF-8."""
+
+
+class FrameTooLargeError(ValueError):
+    """Odebrane dane przekroczyły limit rozmiaru."""
+
+
 class FrameParser:
     """Składa obiekty JSON niezależnie od granic pakietów TCP."""
 
-    def __init__(self, max_frame_bytes: int) -> None:
+    def __init__(self, max_frame_bytes: int, *, log_context: str = "") -> None:
         if max_frame_bytes < 2:
             raise ValueError("Frame size limit must be at least 2 bytes")
         self._limit = max_frame_bytes
+        self._log_context = log_context
         self._buffer = bytearray()
         self._depth = 0
         self._in_string = False
@@ -37,8 +46,8 @@ class FrameParser:
                 continue
 
             if len(self._buffer) >= self._limit:
-                _LOGGER.debug("Frame rejected: JSON size limit exceeded (%d bytes).", self._limit)
-                raise ValueError("Received JSON frame exceeds the size limit")
+                _LOGGER.debug("%sFrame rejected: JSON size limit exceeded (%d bytes).", self._log_context, self._limit)
+                raise FrameTooLargeError("Received JSON frame exceeds the size limit")
             self._buffer.append(byte)
             if self._in_string:
                 if self._escaped:
@@ -57,8 +66,8 @@ class FrameParser:
                     try:
                         frame = json.loads(self._buffer.decode("utf-8"))
                     except (ValueError, RecursionError):
-                        _LOGGER.debug("Frame rejected: invalid JSON or UTF-8 (%d bytes).", len(self._buffer))
+                        _LOGGER.debug("%sFrame rejected: invalid JSON or UTF-8 (%d bytes).", self._log_context, len(self._buffer))
                         # Nie umieszczamy zawartości ramki w komunikacie błędu.
-                        raise ValueError("Received invalid JSON frame") from None
+                        raise InvalidFrameError("Received invalid JSON frame") from None
                     self._buffer.clear()
                     yield frame

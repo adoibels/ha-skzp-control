@@ -7,8 +7,7 @@ from unittest import TestCase
 
 import support
 from support import ROOT
-from test_circuit_numbers import load_definitions
-from test_refactoring import load_function
+from helpers import load_definitions, load_function
 from skzp_control import device
 from skzp_control.parameter_resolver import (
     get_parameter_value,
@@ -34,8 +33,7 @@ class ReturnProtectionTests(TestCase):
         definitions = load_definitions()
         meta = definitions["C030"]
         self.assertEqual((meta["min"], meta["max"], meta["step"], meta["divider"]), (30, 80, 1, 100))
-        env = {**vars(device), "NUMBER_DESCRIPTIONS": definitions, "Any": object,
-               "_FUEL_CALORIC_NUMBER": {"unique_suffix": "fuel_caloric"}}
+        env = {**vars(device), "NUMBER_DESCRIPTIONS": definitions, "Any": object}
         get_numbers = load_function("number.py", "get_number_descriptions", env)
         for model in device.SUPPORTED_DEVICE_MODELS:
             numbers = get_numbers(model, model)

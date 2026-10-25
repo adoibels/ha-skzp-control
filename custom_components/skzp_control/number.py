@@ -17,6 +17,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .pending_change import PendingChangeMixin
+from .localization import entity_translation
 from .const import (
     CONF_BOILER_TEMP_MAX,
     DEFAULT_BOILER_TEMP_MAX,
@@ -31,7 +32,6 @@ from .const import (
 from .device import (
     BUFFER_SETTING_KEYS,
     SUPPORTED_DEVICE_MODELS,
-    SKZP02T_MODEL,
     build_device_info,
     supports_buffer_setting_writes,
     supports_fuel_caloric_write,
@@ -97,17 +97,6 @@ def _number(
     return meta
 
 
-_FUEL_CALORIC_NUMBER = _number(
-    "fuel_caloric",
-    "mdi:fire",
-    "kWh/kg",
-    1,
-    20,
-    0.1,
-    divider=10,
-)
-
-
 _CIRCUIT_NUMBER_TEMPLATES: tuple[dict[str, Any], ...] = (
     # Mieszacz
     {
@@ -124,6 +113,7 @@ _CIRCUIT_NUMBER_TEMPLATES: tuple[dict[str, Any], ...] = (
             90,
             1,
         ),
+        "paired_max": "mixer_opening_max",
     },
     {
         "keys": {
@@ -199,6 +189,7 @@ _CIRCUIT_NUMBER_TEMPLATES: tuple[dict[str, Any], ...] = (
             50,
             1,
         ),
+        "paired_max": "mixer_temp_max",
     },
     {
         "keys": {
@@ -327,6 +318,8 @@ def _build_circuit_numbers() -> dict[str, dict[str, Any]]:
     """Rozwija jawne klucze, zachowując kolejność obiegów i ich odpowiedników."""
     descriptions = {}
     alternatives = {}
+    templates = {template["definition"]["unique_suffix"]: template
+                 for template in _CIRCUIT_NUMBER_TEMPLATES}
     for circuit in range(1, 4):
         for template in _CIRCUIT_NUMBER_TEMPLATES:
             keys = template["keys"].get(circuit, ())
@@ -338,6 +331,8 @@ def _build_circuit_numbers() -> dict[str, dict[str, Any]]:
                     **meta,
                     "unique_suffix": overrides.get(key, f"ch{circuit}_{meta['unique_suffix']}"),
                 }
+                if paired_max := template.get("paired_max"):
+                    target[key]["paired_max"] = templates[paired_max]["keys"][circuit][index]
     return {**descriptions, **alternatives}
 
 
@@ -392,14 +387,17 @@ NUMBER_DESCRIPTIONS = {
     ),
 
     # Modulacja
-    "BuModulMin": _number(
-        "modulation_min",
-        "mdi:gauge-low",
-        "%",
-        5,
-        100,
-        1,
-    ),
+    "BuModulMin": {
+        **_number(
+            "modulation_min",
+            "mdi:gauge-low",
+            "%",
+            5,
+            100,
+            1,
+        ),
+        "paired_max": "BuModulMax",
+    },
     "BuModulMax": _number(
         "modulation_max",
         "mdi:gauge-full",
@@ -433,6 +431,15 @@ NUMBER_DESCRIPTIONS = {
         -50,
         200,
         1,
+    ),
+    "BuFuelCaloric": _number(
+        "fuel_caloric",
+        "mdi:fire",
+        "kWh/kg",
+        1,
+        20,
+        0.1,
+        divider=10,
     ),
 
     # Spaliny
@@ -487,14 +494,17 @@ NUMBER_DESCRIPTIONS = {
     ),
 
     # Powietrze
-    "BuAirMin": _number(
-        "air_min",
-        "mdi:fan-chevron-down",
-        "%",
-        1,
-        100,
-        1,
-    ),
+    "BuAirMin": {
+        **_number(
+            "air_min",
+            "mdi:fan-chevron-down",
+            "%",
+            1,
+            100,
+            1,
+        ),
+        "paired_max": "BuAirMax",
+    },
     "BuAirMax": _number(
         "air_max",
         "mdi:fan-chevron-up",
@@ -541,15 +551,25 @@ NUMBER_DESCRIPTIONS = {
     ),
 
     # Podajnik
-    "BuOptFdrEff": _number(
-        "feeder_efficiency",
-        "mdi:scale",
-        "kg/h",
-        2,
-        200,
-        0.05,
-        divider=100,
-    ),
+    "BuOptFdrEff": {
+        **_number(
+            "feeder_efficiency",
+            "mdi:scale",
+            "kg/h",
+            2,
+            200,
+            0.05,
+            divider=100,
+        ),
+        "model_overrides": {
+            "SKZP-02T": {
+                "unit": "kg",
+                "min": 0.01,
+                "max": 50,
+                "step": 0.01,
+            },
+        },
+    },
     "BuOptFdrFTime": _number(
         "max_feed_time",
         "mdi:timer-play-outline",
@@ -644,40 +664,30 @@ def get_number_descriptions(
     if model not in SUPPORTED_DEVICE_MODELS:
         return {}
 
-    descriptions = dict(NUMBER_DESCRIPTIONS)
+    descriptions = {}
+    for key, source in NUMBER_DESCRIPTIONS.items():
+        meta = dict(source)
+        overrides = meta.pop("model_overrides", {})
+        meta.update(overrides.get(model, {}))
+        descriptions[key] = meta
     device_identity = dev_type or model
 
     if not supports_buffer_setting_writes(device_identity):
         for key in BUFFER_SETTING_KEYS:
             descriptions.pop(key, None)
 
-    if model == SKZP02T_MODEL:
-        descriptions["BuOptFdrEff"] = {
-            **descriptions["BuOptFdrEff"],
-            "unit": "kg",
-            "min": 0.01,
-            "max": 50,
-            "step": 0.01,
-        }
-
     if supports_fuel_caloric_write(device_identity):
         descriptions.pop("BuFuelCorr", None)
-        descriptions["BuFuelCaloric"] = _FUEL_CALORIC_NUMBER
+    else:
+        descriptions.pop("BuFuelCaloric", None)
     return descriptions
 
 
-# Pary parametrów, które muszą zachować minimum ≤ maksimum.
-MIN_MAX_PAIRS = (
-    ("BuModulMin", "BuModulMax"),
-    ("BuAirMin", "BuAirMax"),
-    ("C028", "C029"),  # CO1 Mieszacz Temp. min./maks.
-    ("C022", "C023"),  # CO1 Mieszacz Min./Maks. otwarcie
-    ("C128", "C129"),  # CO2 Mieszacz Temp. min./maks.
-    ("C122", "C123"),  # CO2 Mieszacz Min./Maks. otwarcie
-    ("C228", "C229"),  # CO3 Mieszacz Temp. min./maks.
-    ("C222", "C223"),  # CO3 Mieszacz Min./Maks. otwarcie
-    ("CH1MixTempMin", "CH1MixTempMax"),
-    ("CH1MixValueMin", "CH1MixValueMax"),
+# Pary min–max wynikające z definicji parametrów.
+MIN_MAX_PAIRS = tuple(
+    (key, meta["paired_max"])
+    for key, meta in NUMBER_DESCRIPTIONS.items()
+    if "paired_max" in meta
 )
 
 _MIN_TO_MAX = dict(MIN_MAX_PAIRS)
@@ -751,7 +761,7 @@ class SkzpNumber(PendingChangeMixin, RestoreNumber):
         self._meta = meta
         self._decimals = _decimals_for_step(meta["step"])
 
-        self._attr_translation_key = meta["unique_suffix"]
+        self._attr_translation_key, self._attr_translation_placeholders = entity_translation(meta["unique_suffix"])
         self._attr_unique_id = f"{config_entry.entry_id}_{meta['unique_suffix']}"
         self._attr_native_unit_of_measurement = meta.get("unit")
         self._attr_native_min_value = meta["min"]
@@ -890,13 +900,14 @@ class SkzpNumber(PendingChangeMixin, RestoreNumber):
                 return
 
             try:
-                async def send_attempt() -> None:
+                async def send_attempt(retry_number: int) -> None:
+                    confirmation_event.clear()
                     command_key = resolve_parameter_write_key(self._client.data, self._key)
                     await self._client.send_command({command_key: send_val})
-                    _LOGGER.debug("[SKZP Control] %s:%s — Command sent: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.number.{self._attr_translation_key}.name', language='en'), self._format_value(value))
-
-                def log_retry(retry_number: int) -> None:
-                    self._client.log_command_retry(self._client.translate(f'entity.number.{self._attr_translation_key}.name', language='en'), self._format_value(value), retry_number)
+                    self._client.log_command_sent(
+                        self._client.translate(f"entity.number.{self._attr_translation_key}.name", language="en", **self._attr_translation_placeholders),
+                        self._format_value(value), retry_number,
+                    )
 
                 if await self._client.command_manager.execute(
                     send=send_attempt,
@@ -904,14 +915,13 @@ class SkzpNumber(PendingChangeMixin, RestoreNumber):
                     is_current=lambda: send_generation == self._send_generation,
                     retry_count=self._client.command_retry_count,
                     retry_delay=self._client.command_retry_delay,
-                    on_retry=log_retry,
                     is_confirmed=lambda: confirmation_event.is_set()
                     and self._last_controller_value is not None
                     and self._round(self._last_controller_value) == self._round(value),
                 ):
                     if send_generation == self._send_generation:
                         self._confirmation_event = None
-                        _LOGGER.debug("[SKZP Control] %s:%s — Change confirmed: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.number.{self._attr_translation_key}.name', language='en'), self._format_value(value))
+                        _LOGGER.debug("[SKZP Control] %s:%s — Change confirmed: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.number.{self._attr_translation_key}.name', language='en', **self._attr_translation_placeholders), self._format_value(value))
                     return
             except HomeAssistantError:
                 if send_generation == self._send_generation:
@@ -949,6 +959,7 @@ class SkzpNumber(PendingChangeMixin, RestoreNumber):
             confirmation_event,
             self._client.command_confirmation_timeout,
             lambda: send_generation == self._send_generation and self._last_controller_value is not None and (self._round(self._last_controller_value) == self._round(target_value)),
+            is_current=lambda: send_generation == self._send_generation,
         )
 
     def _restore_controller_value(
@@ -962,7 +973,7 @@ class SkzpNumber(PendingChangeMixin, RestoreNumber):
             else fallback_value
         )
         self._attr_native_value = restored_value
-        _LOGGER.debug("[SKZP Control] %s:%s — State restored: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.number.{self._attr_translation_key}.name', language='en'), self._format_value(restored_value) if restored_value is not None else "unknown")
+        _LOGGER.debug("[SKZP Control] %s:%s — State restored: %s = %s.", self._client.host, self._client.port, self._client.translate(f'entity.number.{self._attr_translation_key}.name', language='en', **self._attr_translation_placeholders), self._format_value(restored_value) if restored_value is not None else "unknown")
         self._confirmed_value = restored_value
         self._clear_pending_change()
         self.async_write_ha_state()
